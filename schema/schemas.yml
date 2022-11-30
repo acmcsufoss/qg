@@ -1,0 +1,75 @@
+Error:
+  description: Error is returned on every API error.
+  required: [ message ]
+  properties:
+    message:
+      type: string
+      description: Error message.
+GameData:
+  description: |-
+    GameData describes the initial game state. It consists of everything needed
+    to replicate the game from the start.
+  properties:
+    data:
+      discriminator:
+        propertyName: style
+        mapping:
+          jeopardy: "#/JeopardyGame"
+          kahoot: "#/KahootGame"
+      oneOf:
+        - $ref: "#/JeopardyGame"
+        - $ref: "#/KahootGame"
+JeopardyGame:
+  description: JeopardyGame is the game data for a Jeopardy game.
+  required: [ style ]
+  properties:
+    style:
+      type: string
+      enum: [ jeopardy ]
+    moderators:
+      type: boolean
+      default: false
+      description: |-
+        moderators enables moderators being able to join.
+    member_name:
+      type: boolean
+      default: true
+      description: |-
+        member_name, if true, will require members to input a name before we can
+        participate.
+    score_multiplier:
+      type: integer
+      default: 100
+      description: |-
+        score_multiplier is the score multiplier for each question.
+    categories:
+      type: array
+      items:
+        $ref: "#/JeopardyCategory"
+JeopardyCategory:
+  description: JeopardyCategory is a category in a Jeopardy game.
+  required: [ name, questions ]
+  properties:
+    name:
+      type: string
+      description: |-
+        name is the name of the category.
+    questions:
+      type: array
+      items:
+        $ref: "#/JeopardyQuestion"
+JeopardyQuestion:
+  description: JeopardyQuestion is a question in a Jeopardy game.
+  required: [ question, answers ]
+  properties:
+    question:
+      type: string
+      description: |-
+        question is the question.
+    answers:
+      type: array
+      items:
+        type: string
+      description: |-
+        answers are the possible answers.
+
