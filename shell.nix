@@ -54,6 +54,23 @@ let	goapi-gen = pkgs.buildGoModule {
 		};
 		vendorSha256 = "0gjj1zn29vyx704y91g77zrs770y2rakksnn9dhg8r6na94njh5a";
 	};
+	
+	jtd-codegen = pkgs.runCommandCC "jtd-codegen" (rec {
+		version = "0.4.1";
+		src = pkgs.fetchzip {
+			url = "https://github.com/jsontypedef/json-typedef-codegen/releases/download/v${version}/x86_64-unknown-linux-gnu.zip";
+			sha256 = "0rwa03ka4z48b910nff1i3kphg2saj5ny7fgp4mx04vai4v4csjx";
+		};
+		nativeBuildInputs = with pkgs; [
+			autoPatchelfHook
+			patchelf
+		];
+	}) ''
+		mkdir -p $out/bin
+		cp --no-preserve=mode,ownership $src/jtd-codegen $out/bin/jtd-codegen
+		chmod +x $out/bin/jtd-codegen
+		patchelf --set-interpreter "$(cat $NIX_CC/nix-support/dynamic-linker)" $out/bin/jtd-codegen
+	'';
 
 in pkgs.mkShell {
 	buildInputs = with pkgs; [
@@ -65,6 +82,10 @@ in pkgs.mkShell {
 		pgformatter
 		nixos-shell # for local PostgreSQL server
 		nodejs
+		yq-go
+		yajsv
+		jsonnet
+		jtd-codegen
 	];
 
 	shellHook = ''
