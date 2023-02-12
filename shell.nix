@@ -89,6 +89,6 @@ in pkgs.mkShell {
 	];
 
 	shellHook = ''
-		PATH="$PWD/frontend/node_modules/.bin:$PATH"
+		PATH="$PWD/node_modules/.bin:$PATH"
 	'';
 }
