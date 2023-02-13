@@ -2,6 +2,63 @@ import * as jtd from "jtd";
 
 export default {
   definitions: {
+    Command: {
+      discriminator: "type",
+      mapping: {
+        JeopardyChooseQuestion: {
+          properties: {
+            data: {
+              ref: "CommandJeopardyChooseQuestion",
+            },
+          },
+        },
+        JoinGame: {
+          properties: {
+            data: {
+              ref: "CommandJoinGame",
+            },
+          },
+        },
+      },
+    },
+    CommandJeopardyChooseQuestion: {
+      additionalProperties: false,
+      metadata: {
+        description:
+          "CommandJeopardyChooseQuestion is emitted when a player chooses a question\nto answer. The server must do validation to ensure that the player is\nallowed to choose the question.\n",
+      },
+      optionalProperties: {},
+      properties: {
+        category: {
+          type: "string",
+        },
+        question: {
+          type: "string",
+        },
+      },
+    },
+    CommandJoinGame: {
+      additionalProperties: false,
+      metadata: {
+        description:
+          "CommandJoinGame is sent by a client to join a game. The client (or the\nuser) supplies a game ID and a player name. The server will respond with\nan EventJoinedGame.\n",
+      },
+      optionalProperties: {},
+      properties: {
+        gameID: {
+          metadata: {
+            description: "gameID is the ID of the game to join.",
+          },
+          type: "string",
+        },
+        playerName: {
+          metadata: {
+            description: "playerName is the wanted name of the user.",
+          },
+          ref: "PlayerName",
+        },
+      },
+    },
     Error: {
       additionalProperties: false,
       metadata: {
@@ -14,6 +71,113 @@ export default {
             description: "Message is the error message",
           },
           type: "string",
+        },
+      },
+    },
+    Event: {
+      discriminator: "type",
+      mapping: {
+        GameEnded: {
+          properties: {
+            data: {
+              ref: "EventGameEnded",
+            },
+          },
+        },
+        JeopardyBeginQuestion: {
+          properties: {
+            data: {
+              ref: "EventJeopardyBeginQuestion",
+            },
+          },
+        },
+        JeopardyTurnEnded: {
+          properties: {
+            data: {
+              ref: "EventJeopardyTurnEnded",
+            },
+          },
+        },
+        JoinedGame: {
+          properties: {
+            data: {
+              ref: "EventJoinedGame",
+            },
+          },
+        },
+        PlayerJoined: {
+          properties: {
+            data: {
+              ref: "EventPlayerJoined",
+            },
+          },
+        },
+      },
+    },
+    EventGameEnded: {
+      additionalProperties: false,
+      metadata: {
+        description: "EventGameEnded is emitted when the current game ends.\n",
+      },
+      optionalProperties: {},
+      properties: {
+        leaderboard: {
+          ref: "Leaderboard",
+        },
+      },
+    },
+    EventJeopardyBeginQuestion: {
+      additionalProperties: false,
+      metadata: {
+        description:
+          "EventJeopardyBeginQuestion is emitted when a question begins within this\nJeopardy game. It is usually emitted once the chooser player has chosen a\ncategory and value.\n\nEach category name and question value will map to a category and question\nwithin the game data. Note that a question may repeat across multiple\ncategories.\n",
+      },
+      optionalProperties: {},
+      properties: {
+        category: {
+          type: "string",
+        },
+        question: {
+          type: "string",
+        },
+      },
+    },
+    EventJeopardyTurnEnded: {
+      additionalProperties: false,
+      metadata: {
+        description:
+          "EventJeopardyTurnEnded is emitted when a turn ends or when the game first\nstarts.\n",
+      },
+      optionalProperties: {},
+      properties: {
+        currentScore: {
+          type: "float64",
+        },
+        isChooser: {
+          type: "boolean",
+        },
+        leaderboard: {
+          ref: "Leaderboard",
+        },
+      },
+    },
+    EventJoinedGame: {
+      metadata: {
+        description:
+          "EventJoinedGame is emitted when the current player joins a game. It is a\nreply to CommandJoinGame and is only for the current player. Not to be\nconfused with EventPlayerJoinedGame, which is emitted when any player\njoins the current game.\n",
+      },
+      ref: "Game",
+    },
+    EventPlayerJoined: {
+      additionalProperties: false,
+      metadata: {
+        description:
+          "EventPlayerJoined is emitted when a player joins the current game.\n",
+      },
+      optionalProperties: {},
+      properties: {
+        playerName: {
+          ref: "PlayerName",
         },
       },
     },
@@ -64,7 +228,7 @@ export default {
             description:
               "score_multiplier is the score multiplier for each question. The\ndefault is 100.\n",
           },
-          type: "float32",
+          type: "float64",
         },
       },
       properties: {
@@ -174,6 +338,32 @@ export default {
           type: "string",
         },
       },
+    },
+    Leaderboard: {
+      elements: {
+        ref: "LeaderboardEntry",
+      },
+      metadata: {
+        description: "Leaderboard is a list of players and their scores.\n",
+      },
+    },
+    LeaderboardEntry: {
+      additionalProperties: false,
+      optionalProperties: {},
+      properties: {
+        playerName: {
+          type: "string",
+        },
+        score: {
+          type: "int32",
+        },
+      },
+    },
+    PlayerName: {
+      metadata: {
+        description: "PlayerName is the name of a player.\n",
+      },
+      type: "string",
     },
   },
 } as jtd.Schema;

@@ -10,4 +10,23 @@ local schema = import '../lib/schema.jsonnet';
       kahoot: 'Kahoot',
     })
   ),
+
+  PlayerName: schema.description(
+    |||
+      PlayerName is the name of a player.
+    |||,
+    schema.string
+  ),
+
+  Leaderboard: schema.description(
+    |||
+      Leaderboard is a list of players and their scores.
+    |||,
+    schema.arrayOf(schema.ref('LeaderboardEntry'))
+  ),
+
+  LeaderboardEntry: schema.properties({
+    playerName: schema.string,
+    score: schema.int,
+  }),
 }

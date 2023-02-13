@@ -16,6 +16,10 @@ local filterHidden = function(hidden)
       obj,
     );
 {
-  onlyHidden: filterHidden(true),
-  onlyVisible: filterHidden(false),
+  onlyHidden:: filterHidden(true),
+  onlyVisible:: filterHidden(false),
+  trimPrefix:: function(str, prefix)
+    if std.startsWith(str, prefix)
+    then std.slice(str, std.length(prefix), std.length(str), 1)
+    else str,
 }

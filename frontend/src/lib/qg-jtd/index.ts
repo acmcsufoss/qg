@@ -2,6 +2,45 @@
 
 export type Qg = any;
 
+export type Command = CommandJeopardyChooseQuestion0 | CommandJoinGame0;
+
+export interface CommandJeopardyChooseQuestion0 {
+  type: "JeopardyChooseQuestion";
+  data: CommandJeopardyChooseQuestion;
+}
+
+export interface CommandJoinGame0 {
+  type: "JoinGame";
+  data: CommandJoinGame;
+}
+
+/**
+ * CommandJeopardyChooseQuestion is emitted when a player chooses a question
+ * to answer. The server must do validation to ensure that the player is
+ * allowed to choose the question.
+ */
+export interface CommandJeopardyChooseQuestion {
+  category: string;
+  question: string;
+}
+
+/**
+ * CommandJoinGame is sent by a client to join a game. The client (or the
+ * user) supplies a game ID and a player name. The server will respond with
+ * an EventJoinedGame.
+ */
+export interface CommandJoinGame {
+  /**
+   * gameID is the ID of the game to join.
+   */
+  gameID: string;
+
+  /**
+   * playerName is the wanted name of the user.
+   */
+  playerName: PlayerName;
+}
+
 /**
  * Error is returned on every API error.
  */
@@ -10,6 +49,84 @@ export interface Error {
    * Message is the error message
    */
   message: string;
+}
+
+export type Event =
+  | EventGameEnded0
+  | EventJeopardyBeginQuestion0
+  | EventJeopardyTurnEnded0
+  | EventJoinedGame0
+  | EventPlayerJoined0;
+
+export interface EventGameEnded0 {
+  type: "GameEnded";
+  data: EventGameEnded;
+}
+
+export interface EventJeopardyBeginQuestion0 {
+  type: "JeopardyBeginQuestion";
+  data: EventJeopardyBeginQuestion;
+}
+
+export interface EventJeopardyTurnEnded0 {
+  type: "JeopardyTurnEnded";
+  data: EventJeopardyTurnEnded;
+}
+
+export interface EventJoinedGame0 {
+  type: "JoinedGame";
+  data: EventJoinedGame;
+}
+
+export interface EventPlayerJoined0 {
+  type: "PlayerJoined";
+  data: EventPlayerJoined;
+}
+
+/**
+ * EventGameEnded is emitted when the current game ends.
+ */
+export interface EventGameEnded {
+  leaderboard: Leaderboard;
+}
+
+/**
+ * EventJeopardyBeginQuestion is emitted when a question begins within this
+ * Jeopardy game. It is usually emitted once the chooser player has chosen a
+ * category and value.
+ *
+ * Each category name and question value will map to a category and question
+ * within the game data. Note that a question may repeat across multiple
+ * categories.
+ */
+export interface EventJeopardyBeginQuestion {
+  category: string;
+  question: string;
+}
+
+/**
+ * EventJeopardyTurnEnded is emitted when a turn ends or when the game first
+ * starts.
+ */
+export interface EventJeopardyTurnEnded {
+  currentScore: number;
+  isChooser: boolean;
+  leaderboard: Leaderboard;
+}
+
+/**
+ * EventJoinedGame is emitted when the current player joins a game. It is a
+ * reply to CommandJoinGame and is only for the current player. Not to be
+ * confused with EventPlayerJoinedGame, which is emitted when any player
+ * joins the current game.
+ */
+export type EventJoinedGame = Game;
+
+/**
+ * EventPlayerJoined is emitted when a player joins the current game.
+ */
+export interface EventPlayerJoined {
+  playerName: PlayerName;
 }
 
 /**
@@ -118,3 +235,18 @@ export interface KahootQuestion {
    */
   question: string;
 }
+
+/**
+ * Leaderboard is a list of players and their scores.
+ */
+export type Leaderboard = LeaderboardEntry[];
+
+export interface LeaderboardEntry {
+  playerName: string;
+  score: number;
+}
+
+/**
+ * PlayerName is the name of a player.
+ */
+export type PlayerName = string;

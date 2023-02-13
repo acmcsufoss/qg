@@ -72,6 +72,15 @@ let	goapi-gen = pkgs.buildGoModule {
 		patchelf --set-interpreter "$(cat $NIX_CC/nix-support/dynamic-linker)" $out/bin/jtd-codegen
 	'';
 
+	jsonnet-language-server =
+		let src = pkgs.fetchFromGitHub {
+			owner  = "grafana";
+			repo   = "jsonnet-language-server";
+			rev    = "v0.11.0";
+			sha256 = "1gh5j9gn23f7az4hqiq2ibb41bm2w76vda2ls8bavh7qbfvjvwm0";
+		};
+		in pkgs.callPackage "${src}/nix" { };
+
 in pkgs.mkShell {
 	buildInputs = with pkgs; [
 		go_1_18
@@ -86,6 +95,7 @@ in pkgs.mkShell {
 		yajsv
 		jsonnet
 		jtd-codegen
+		jsonnet-language-server
 	];
 
 	shellHook = ''

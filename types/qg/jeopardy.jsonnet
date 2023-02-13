@@ -27,7 +27,7 @@ local schema = import '../lib/schema.jsonnet';
             score_multiplier is the score multiplier for each question. The
             default is 100.
           |||,
-          schema.float32,
+          schema.float,
         ),
         // score_to_win: schema.description(
         //   |||
@@ -82,7 +82,7 @@ local schema = import '../lib/schema.jsonnet';
             correct_answer is the correct answer within the list of answers
             above. The index starts at 1.
           |||,
-          schema.int32,
+          schema.int,
         ),
       },
     ),
