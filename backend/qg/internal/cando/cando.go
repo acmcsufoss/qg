@@ -2,68 +2,195 @@ package cando
 
 import (
 	"context"
+	"errors"
 	"fmt"
-
-	"github.com/pkg/errors"
+	"reflect"
 )
 
-// State is a state in the FSM.
-type State struct {
-	Name string
-
-	Enter  func(ctx context.Context, prev State) error
-	Update func(ctx context.Context) error
-	Exit   func(ctx context.Context) error
+// StatefulContext is a type that holds a value of type T in any
+// context.Context.
+type StatefulContext[T any] struct {
+	k reflect.Type
 }
 
-// Transitions is a list of allowed state transitions.
-type Transitions map[string][]string
+type statefulBox[T any] struct {
+	v *T
+}
+
+// NewStatefulContext creates a new StatefulContext.
+func NewStatefulContext[T any]() StatefulContext[T] {
+	var z T
+	return StatefulContext[T]{
+		k: reflect.TypeOf(z),
+	}
+}
+
+// WithContext adds a stateful placeholder value to the given context.
+func (c StatefulContext[T]) WithContext(ctx context.Context) context.Context {
+	return context.WithValue(ctx, reflect.TypeOf(c.k), &statefulBox[T]{})
+}
+
+// Set sets the stateful value in the given context. The context must
+// have been created with WithContext; a panic occurs otherwise.
+func (c StatefulContext[T]) Set(ctx context.Context, v *T) {
+	ctx.Value(reflect.TypeOf(c.k)).(*statefulBox[T]).v = v
+}
+
+// Get retrieves the stateful value from the given context. The context must
+// have been created with WithContext; a panic occurs otherwise.
+func (c StatefulContext[T]) Get(ctx context.Context) *T {
+	return ctx.Value(reflect.TypeOf(c.k)).(*statefulBox[T]).v
+}
+
+// NextStates is a list of NextState.
+type NextStates []NextState
+
+// NextState describes the next state to transition to.
+type NextState struct {
+	nextType reflect.Type
+}
+
+// Next constructs a NextState that can be used to change the current State to
+// the given State.
+func Next[T any]() NextState {
+	var z T
+	return NextState{reflect.TypeOf(z)}
+}
+
+// EndReaction is a special type that indicates to the machine that the function
+// is meant to react to the end of the state machine.
+type EndReaction struct{}
+
+// Reactor describes a function that reacts to a change in state. The previous
+// and next types will describe the state that was left and the state that was
+// entered, respectively.
+func Reactor[PrevT, NextT any](f func(ctx context.Context, prev PrevT, next NextT) error) AnyReactor {
+	var prevZ PrevT
+	var nextZ NextT
+	return reactor[PrevT, NextT]{
+		f: f,
+		t: [2]reflect.Type{
+			reflect.TypeOf(prevZ),
+			reflect.TypeOf(nextZ),
+		},
+	}
+}
+
+type reactor[PrevT, NextT any] struct {
+	f func(ctx context.Context, prev PrevT, next NextT) error
+	t [2]reflect.Type
+}
+
+// AnyReactor is an interface that any reactor will implement.
+type AnyReactor interface {
+	dataTypes() [2]reflect.Type
+	react(ctx context.Context, prev, next interface{}, machine *Machine) error
+}
+
+var _ AnyReactor = reactor[any, any]{}
+
+func (r reactor[PrevT, NextT]) dataTypes() [2]reflect.Type {
+	return r.t
+}
+
+func (r reactor[PrevT, NextT]) react(ctx context.Context, prev, next interface{}, _ *Machine) error {
+	return r.f(ctx, prev.(PrevT), next.(NextT))
+}
+
+// State creates a state in the FSM.
+func State[T any](f func(ctx context.Context, value T) (NextStates, error)) AnyState {
+	return stateFunc[T](f)
+}
+
+// InitState describes the initial state of the FSM. Its sole job should be to
+// describe the next possible states when the FSM is started.
+type InitState func(ctx context.Context) NextStates
+
+type stateFunc[T any] func(ctx context.Context, value T) (NextStates, error)
+
+// AnyState is an interface that any State will implement.
+type AnyState interface {
+	dataType() reflect.Type
+	enter(ctx context.Context, data any) (NextStates, error)
+}
+
+var (
+	_ AnyState = (*stateFunc[any])(nil)
+	_ AnyState = (*InitState)(nil)
+)
+
+func (s stateFunc[T]) dataType() reflect.Type {
+	var z T
+	return reflect.TypeOf(z)
+}
+
+func (s stateFunc[T]) enter(ctx context.Context, data any) (NextStates, error) {
+	return s(ctx, data.(T))
+}
+
+func (s InitState) dataType() reflect.Type { return nil }
+
+func (s InitState) enter(ctx context.Context, data any) (NextStates, error) {
+	return s(ctx), nil
+}
 
 // MachineData is a struct that holds the data for creating a finite state
 // machine.
 type MachineData struct {
-	Transitions Transitions
-	States      []State
-
+	States       []AnyState
+	Reactors     []AnyReactor
 	EnterMachine func(ctx context.Context) error
 	LeaveMachine func(ctx context.Context) error
 }
 
+// TODO: find out how to resume a machine from a saved state. We might need to
+// store the machine state and the previous input to reproduce the state, or we
+// store a list of valid next states. We also want to give the enter and leave
+// functions the saved machine.
+
+type savedMachine struct {
+	State      stateIdentifier
+	NextStates []stateIdentifier
+}
+
+type stateIdentifier string
+
 // Machine represents a Finite State Machine, which can have one State active at
 // a time.
 type Machine struct {
-	current     State
-	state       map[string]State
-	transitions Transitions
-	data        MachineData
+	current AnyState
+	next    NextStates
+
+	state    map[reflect.Type]AnyState
+	reactors map[[2]reflect.Type][]AnyReactor
+	data     MachineData
 }
 
 // NewMachine creates a new FSM and returns it.
 func NewMachine(data MachineData) *Machine {
+	if _, ok := data.States[0].(InitState); !ok {
+		panic("first state must be InitState")
+	}
+
 	mac := &Machine{
-		state:       make(map[string]State, len(data.States)),
-		transitions: data.Transitions,
-		data:        data,
+		state:    make(map[reflect.Type]AnyState, len(data.States)),
+		reactors: make(map[[2]reflect.Type][]AnyReactor, len(data.Reactors)),
+		data:     data,
 	}
 
 	for _, state := range data.States {
-		mac.state[state.Name] = state
+		mac.state[state.dataType()] = state
+	}
+
+	for _, reactor := range data.Reactors {
+		k := reactor.dataTypes()
+		mac.reactors[k] = append(mac.reactors[k], reactor)
 	}
 
 	return mac
 }
 
-// Update triggers an update on the active State.
-func (f *Machine) Update(ctx context.Context) {
-	if f.current.Update != nil {
-		f.current.Update(ctx)
-	}
-}
-
-// Change allows you to change the current, "main" State assigned to the FSM. If
-// you run Change(), it will call Exit() on the previous State and Enter() on
-// the next State.
-func (f *Machine) Change(ctx context.Context, stateName string) (err error) {
+func (f *Machine) enter(ctx context.Context, do func() error) (err error) {
 	if err := f.data.EnterMachine(ctx); err != nil {
 		return err
 	}
@@ -76,37 +203,58 @@ func (f *Machine) Change(ctx context.Context, stateName string) (err error) {
 		}()
 	}
 
-	prev := f.current
+	err = do()
+	return
+}
 
-	// Validate that the state exists and that we can enter it before we do so.
-	next, ok := f.state[stateName]
-	if !ok {
-		return fmt.Errorf("cannot change to state %q: state does not exist", stateName)
-	}
+// Start starts the FSM. It will call the EnterMachine function, and then
+// transition to the first state.
+func (f *Machine) Start(ctx context.Context) (err error) {
+	return f.enter(ctx, func() error {
+		if f.current != nil {
+			return errors.New("machine already started")
+		}
 
-	transition := f.transitions[prev.Name]
-	if transition != nil {
-		for _, t := range transition {
-			if t == stateName {
+		f.current = f.data.States[0].(InitState)
+		f.next, _ = f.current.enter(ctx, nil)
+
+		return nil
+	})
+}
+
+func (f *Machine) Resume(ctx context.Context, state SavedState[any]) (err error) {
+
+}
+
+// Change allows you to change the current, "main" State assigned to the FSM.
+// The caller must have called Start first, otherwise an error is returned.
+func (f *Machine) Change(ctx context.Context, data any) (err error) {
+	dataType := reflect.TypeOf(data)
+
+	return f.enter(ctx, func() error {
+		if f.current == nil {
+			return errors.New("machine not started")
+		}
+
+		// Validate the transition.
+		var next AnyState
+		for _, acceptableNext := range f.next {
+			if acceptableNext.nextType == dataType {
+				next = f.state[acceptableNext.nextType]
 				goto allowed
 			}
 		}
-		return fmt.Errorf("cannot change to state %q: transition not allowed", stateName)
+
+		return fmt.Errorf("cannot change to state of type %T: not allowed", data)
 	allowed:
-	}
 
-	if prev.Exit != nil {
-		if err := prev.Exit(ctx); err != nil {
-			return errors.Wrapf(err, "error exiting state %q", prev.Name)
+		nextNexts, err := next.enter(ctx, data)
+		if err != nil {
+			return err
 		}
-	}
 
-	if next.Enter != nil {
-		if err := prev.Enter(ctx, prev); err != nil {
-			return errors.Wrapf(err, "error entering state %q", next.Name)
-		}
-	}
-
-	f.current = next
-	return nil
+		f.current = next
+		f.next = nextNexts
+		return err
+	})
 }
