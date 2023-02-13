@@ -38,6 +38,7 @@ local schema = import '../lib/schema.jsonnet';
       },
     ),
   ),
+
   JeopardyCategory: schema.description(
     |||
       JeopardyCategory is a category in a Jeopardy game.
@@ -59,6 +60,7 @@ local schema = import '../lib/schema.jsonnet';
       },
     ),
   ),
+
   JeopardyQuestion: schema.description(
     |||
       JeopardyQuestion is a question in a Jeopardy game.
@@ -71,20 +73,21 @@ local schema = import '../lib/schema.jsonnet';
           |||,
           schema.string,
         ),
-        answers: schema.description(
-          |||
-            answers are the possible answers.
-          |||,
-          schema.arrayOf(schema.string),
-        ),
-        correct_answer: schema.description(
-          |||
-            correct_answer is the correct answer within the list of answers
-            above. The index starts at 1.
-          |||,
-          schema.int,
-        ),
       },
     ),
+  ),
+
+  JeopardyGameInfo: schema.description(
+    |||
+      JeopardyGameInfo is the initial information for a Jeopardy game. This type
+      contains no useful information about the entire game data, so it's used to
+      send to players the first time they join.
+    |||,
+    schema.properties({
+      players: schema.arrayOf(schema.ref('PlayerName')),
+      categories: schema.arrayOf(schema.string),
+      numQuestions: schema.integer,
+      scoreMultiplier: schema.integer,
+    }),
   ),
 }

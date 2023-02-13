@@ -22,6 +22,7 @@ local schema = import '../lib/schema.jsonnet';
       },
     ),
   ),
+
   KahootQuestion: schema.description(
     |||
       KahootQuestion is a question in a Kahoot game.

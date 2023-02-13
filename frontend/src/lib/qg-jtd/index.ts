@@ -3,10 +3,16 @@
 export type Qg = any;
 
 export type Command =
+  | CommandEndGame0
   | CommandJeopardyChooseQuestion0
   | CommandJeopardyPlayerIsCorrect0
   | CommandJeopardyPressButton0
   | CommandJoinGame0;
+
+export interface CommandEndGame0 {
+  type: "EndGame";
+  data: CommandEndGame;
+}
 
 export interface CommandJeopardyChooseQuestion0 {
   type: "JeopardyChooseQuestion";
@@ -26,6 +32,20 @@ export interface CommandJeopardyPressButton0 {
 export interface CommandJoinGame0 {
   type: "JoinGame";
   data: CommandJoinGame;
+}
+
+/**
+ * CommandEndGame is sent by a client to end the current game. The server
+ * will respond with an EventGameEnded. Only game moderators (including the
+ * host) can end the game.
+ */
+export interface CommandEndGame {
+  /**
+   * declareWinner determines whether the game should be ended with a
+   * winner or not. If true, the game will be ended with a winner. If
+   * false, the game will be ended abruptly.
+   */
+  declareWinner: boolean;
 }
 
 /**
@@ -64,6 +84,11 @@ export interface CommandJoinGame {
    * gameID is the ID of the game to join.
    */
   gameID: string;
+
+  /**
+   * moderatorPassword is the password of the moderator of the game.
+   */
+  moderatorPassword: string | null;
 
   /**
    * playerName is the wanted name of the user.
@@ -185,7 +210,7 @@ export interface EventJeopardyTurnEnded {
  * confused with EventPlayerJoinedGame, which is emitted when any player
  * joins the current game.
  */
-export type EventJoinedGame = Game;
+export type EventJoinedGame = any;
 
 /**
  * EventPlayerJoined is emitted when a player joins the current game.
@@ -250,20 +275,21 @@ export interface JeopardyCategory {
 }
 
 /**
+ * JeopardyGameInfo is the initial information for a Jeopardy game. This type
+ * contains no useful information about the entire game data, so it's used to
+ * send to players the first time they join.
+ */
+export interface JeopardyGameInfo {
+  categories: string[];
+  numQuestions: number;
+  players: PlayerName[];
+  scoreMultiplier: number;
+}
+
+/**
  * JeopardyQuestion is a question in a Jeopardy game.
  */
 export interface JeopardyQuestion {
-  /**
-   * answers are the possible answers.
-   */
-  answers: string[];
-
-  /**
-   * correct_answer is the correct answer within the list of answers
-   * above. The index starts at 1.
-   */
-  correct_answer: number;
-
   /**
    * question is the question.
    */

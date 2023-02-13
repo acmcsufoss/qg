@@ -7,7 +7,14 @@ local schema = import '../lib/schema.jsonnet';
       confused with EventPlayerJoinedGame, which is emitted when any player
       joins the current game.
     |||,
-    schema.ref('Game')
+    schema.description({
+      game: schema.typeUnion({
+        jeopardy: 'JeopardyGameInfo',
+        // kahoot: 'KahootGameInfo',
+      }),
+      isModerator: schema.boolean,
+      gameData: schema.nullable(schema.ref('Game')),
+    }),
   ),
 
   EventPlayerJoined: schema.description(
@@ -42,6 +49,28 @@ local schema = import '../lib/schema.jsonnet';
       playerName: schema.description(
         'playerName is the wanted name of the user.',
         schema.ref('PlayerName')
+      ),
+      moderatorPassword: schema.description(
+        'moderatorPassword is the password of the moderator of the game.',
+        schema.nullable(schema.string)
+      ),
+    })
+  ),
+
+  CommandEndGame: schema.description(
+    |||
+      CommandEndGame is sent by a client to end the current game. The server
+      will respond with an EventGameEnded. Only game moderators (including the
+      host) can end the game.
+    |||,
+    schema.properties({
+      declareWinner: schema.description(
+        |||
+          declareWinner determines whether the game should be ended with a
+          winner or not. If true, the game will be ended with a winner. If
+          false, the game will be ended abruptly.
+        |||,
+        schema.boolean
       ),
     })
   ),

@@ -12,6 +12,8 @@ type Qg = interface{}
 type Command struct {
 	Type string
 
+	EndGame CommandEndGame0
+
 	JeopardyChooseQuestion CommandJeopardyChooseQuestion0
 
 	JeopardyPlayerIsCorrect CommandJeopardyPlayerIsCorrect0
@@ -23,6 +25,8 @@ type Command struct {
 
 func (v Command) MarshalJSON() ([]byte, error) {
 	switch v.Type {
+	case "EndGame":
+		return json.Marshal(struct { T string `json:"type"`; CommandEndGame0 }{ v.Type, v.EndGame })
 	case "JeopardyChooseQuestion":
 		return json.Marshal(struct { T string `json:"type"`; CommandJeopardyChooseQuestion0 }{ v.Type, v.JeopardyChooseQuestion })
 	case "JeopardyPlayerIsCorrect":
@@ -44,6 +48,8 @@ func (v *Command) UnmarshalJSON(b []byte) error {
 
 	var err error
 	switch t.T {
+	case "EndGame":
+		err = json.Unmarshal(b, &v.EndGame)
 	case "JeopardyChooseQuestion":
 		err = json.Unmarshal(b, &v.JeopardyChooseQuestion)
 	case "JeopardyPlayerIsCorrect":
@@ -64,6 +70,10 @@ func (v *Command) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+type CommandEndGame0 struct {
+	Data CommandEndGame `json:"data"`
+}
+
 type CommandJeopardyChooseQuestion0 struct {
 	Data CommandJeopardyChooseQuestion `json:"data"`
 }
@@ -78,6 +88,16 @@ type CommandJeopardyPressButton0 struct {
 
 type CommandJoinGame0 struct {
 	Data CommandJoinGame `json:"data"`
+}
+
+// CommandEndGame is sent by a client to end the current game. The server
+// will respond with an EventGameEnded. Only game moderators (including the
+// host) can end the game.
+type CommandEndGame struct {
+	// declareWinner determines whether the game should be ended with a
+	// winner or not. If true, the game will be ended with a winner. If
+	// false, the game will be ended abruptly.
+	DeclareWinner bool `json:"declareWinner"`
 }
 
 // CommandJeopardyChooseQuestion is sent by a player to choose a question.
@@ -107,6 +127,9 @@ type CommandJeopardyPressButton = interface{}
 type CommandJoinGame struct {
 	// gameID is the ID of the game to join.
 	GameID string `json:"gameID"`
+
+	// moderatorPassword is the password of the moderator of the game.
+	ModeratorPassword *string `json:"moderatorPassword"`
 
 	// playerName is the wanted name of the user.
 	PlayerName PlayerName `json:"playerName"`
@@ -271,7 +294,7 @@ type EventJeopardyTurnEnded struct {
 // reply to CommandJoinGame and is only for the current player. Not to be
 // confused with EventPlayerJoinedGame, which is emitted when any player
 // joins the current game.
-type EventJoinedGame = Game
+type EventJoinedGame = interface{}
 
 // EventPlayerJoined is emitted when a player joins the current game.
 type EventPlayerJoined struct {
@@ -356,15 +379,21 @@ type JeopardyCategory struct {
 	Questions []JeopardyQuestion `json:"questions"`
 }
 
+// JeopardyGameInfo is the initial information for a Jeopardy game. This type
+// contains no useful information about the entire game data, so it's used to
+// send to players the first time they join.
+type JeopardyGameInfo struct {
+	Categories []string `json:"categories"`
+
+	NumQuestions int32 `json:"numQuestions"`
+
+	Players []PlayerName `json:"players"`
+
+	ScoreMultiplier int32 `json:"scoreMultiplier"`
+}
+
 // JeopardyQuestion is a question in a Jeopardy game.
 type JeopardyQuestion struct {
-	// answers are the possible answers.
-	Answers []string `json:"answers"`
-
-	// correct_answer is the correct answer within the list of answers
-	// above. The index starts at 1.
-	CorrectAnswer int32 `json:"correct_answer"`
-
 	// question is the question.
 	Question string `json:"question"`
 }

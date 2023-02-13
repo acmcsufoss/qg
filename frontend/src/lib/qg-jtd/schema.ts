@@ -5,6 +5,13 @@ export default {
     Command: {
       discriminator: "type",
       mapping: {
+        EndGame: {
+          properties: {
+            data: {
+              ref: "CommandEndGame",
+            },
+          },
+        },
         JeopardyChooseQuestion: {
           properties: {
             data: {
@@ -32,6 +39,23 @@ export default {
               ref: "CommandJoinGame",
             },
           },
+        },
+      },
+    },
+    CommandEndGame: {
+      additionalProperties: false,
+      metadata: {
+        description:
+          "CommandEndGame is sent by a client to end the current game. The server\nwill respond with an EventGameEnded. Only game moderators (including the\nhost) can end the game.\n",
+      },
+      optionalProperties: {},
+      properties: {
+        declareWinner: {
+          metadata: {
+            description:
+              "declareWinner determines whether the game should be ended with a\nwinner or not. If true, the game will be ended with a winner. If\nfalse, the game will be ended abruptly.\n",
+          },
+          type: "boolean",
         },
       },
     },
@@ -75,6 +99,14 @@ export default {
           metadata: {
             description: "gameID is the ID of the game to join.",
           },
+          type: "string",
+        },
+        moderatorPassword: {
+          metadata: {
+            description:
+              "moderatorPassword is the password of the moderator of the game.",
+          },
+          nullable: true,
           type: "string",
         },
         playerName: {
@@ -235,7 +267,6 @@ export default {
         description:
           "EventJoinedGame is emitted when the current player joins a game. It is a\nreply to CommandJoinGame and is only for the current player. Not to be\nconfused with EventPlayerJoinedGame, which is emitted when any player\njoins the current game.\n",
       },
-      ref: "Game",
     },
     EventPlayerJoined: {
       additionalProperties: false,
@@ -331,6 +362,32 @@ export default {
         },
       },
     },
+    JeopardyGameInfo: {
+      additionalProperties: false,
+      metadata: {
+        description:
+          "JeopardyGameInfo is the initial information for a Jeopardy game. This type\ncontains no useful information about the entire game data, so it's used to\nsend to players the first time they join.\n",
+      },
+      optionalProperties: {},
+      properties: {
+        categories: {
+          elements: {
+            type: "string",
+          },
+        },
+        numQuestions: {
+          type: "int32",
+        },
+        players: {
+          elements: {
+            ref: "PlayerName",
+          },
+        },
+        scoreMultiplier: {
+          type: "int32",
+        },
+      },
+    },
     JeopardyQuestion: {
       additionalProperties: false,
       metadata: {
@@ -338,21 +395,6 @@ export default {
       },
       optionalProperties: {},
       properties: {
-        answers: {
-          elements: {
-            type: "string",
-          },
-          metadata: {
-            description: "answers are the possible answers.\n",
-          },
-        },
-        correct_answer: {
-          metadata: {
-            description:
-              "correct_answer is the correct answer within the list of answers\nabove. The index starts at 1.\n",
-          },
-          type: "int32",
-        },
         question: {
           metadata: {
             description: "question is the question.\n",

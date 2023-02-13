@@ -43,7 +43,8 @@ local stdx = import 'stdx.jsonnet';
   ref(ref): { ref: ref },
   // Extra overrides.
   nullable: function(any) any { nullable: true },
-  metadata: function(metadata, any) any { metadata: metadata },
-  description: function(description, any)
+  metadata: function(metadata, any=$.empty)
+    any { metadata: metadata },
+  description: function(description, any=$.empty)
     self.metadata({ description: description }, any),
 }
