@@ -5,6 +5,13 @@ export default {
     Command: {
       discriminator: "type",
       mapping: {
+        JeopardyChooseQuestion: {
+          properties: {
+            data: {
+              ref: "CommandJeopardyChooseQuestion",
+            },
+          },
+        },
         JeopardyPlayerIsCorrect: {
           properties: {
             data: {
@@ -25,6 +32,22 @@ export default {
               ref: "CommandJoinGame",
             },
           },
+        },
+      },
+    },
+    CommandJeopardyChooseQuestion: {
+      additionalProperties: false,
+      metadata: {
+        description:
+          "CommandJeopardyChooseQuestion is sent by a player to choose a question.\nThe server must do validation to ensure that the player is allowed to\nchoose the question.\n",
+      },
+      optionalProperties: {},
+      properties: {
+        category: {
+          type: "string",
+        },
+        question: {
+          type: "string",
         },
       },
     },
@@ -153,6 +176,9 @@ export default {
       properties: {
         category: {
           type: "string",
+        },
+        chooser: {
+          ref: "PlayerName",
         },
         question: {
           type: "string",

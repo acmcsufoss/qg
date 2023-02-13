@@ -3,9 +3,15 @@
 export type Qg = any;
 
 export type Command =
+  | CommandJeopardyChooseQuestion0
   | CommandJeopardyPlayerIsCorrect0
   | CommandJeopardyPressButton0
   | CommandJoinGame0;
+
+export interface CommandJeopardyChooseQuestion0 {
+  type: "JeopardyChooseQuestion";
+  data: CommandJeopardyChooseQuestion;
+}
 
 export interface CommandJeopardyPlayerIsCorrect0 {
   type: "JeopardyPlayerIsCorrect";
@@ -20,6 +26,16 @@ export interface CommandJeopardyPressButton0 {
 export interface CommandJoinGame0 {
   type: "JoinGame";
   data: CommandJoinGame;
+}
+
+/**
+ * CommandJeopardyChooseQuestion is sent by a player to choose a question.
+ * The server must do validation to ensure that the player is allowed to
+ * choose the question.
+ */
+export interface CommandJeopardyChooseQuestion {
+  category: string;
+  question: string;
 }
 
 /**
@@ -127,6 +143,7 @@ export interface EventGameEnded {
  */
 export interface EventJeopardyBeginQuestion {
   category: string;
+  chooser: PlayerName;
   question: string;
 }
 

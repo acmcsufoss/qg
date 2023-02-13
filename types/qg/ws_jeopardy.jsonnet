@@ -23,6 +23,7 @@ local schema = import '../lib/schema.jsonnet';
       categories.
     |||,
     schema.properties({
+      chooser: schema.ref('PlayerName'),
       category: schema.string,
       question: schema.string,
     }),
@@ -51,6 +52,18 @@ local schema = import '../lib/schema.jsonnet';
     |||,
     schema.properties({
       alreadyPressed: schema.boolean,
+    }),
+  ),
+
+  CommandJeopardyChooseQuestion: schema.description(
+    |||
+      CommandJeopardyChooseQuestion is sent by a player to choose a question.
+      The server must do validation to ensure that the player is allowed to
+      choose the question.
+    |||,
+    schema.properties({
+      category: schema.string,
+      question: schema.string,
     }),
   ),
 

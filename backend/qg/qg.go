@@ -12,6 +12,8 @@ type Qg = interface{}
 type Command struct {
 	Type string
 
+	JeopardyChooseQuestion CommandJeopardyChooseQuestion0
+
 	JeopardyPlayerIsCorrect CommandJeopardyPlayerIsCorrect0
 
 	JeopardyPressButton CommandJeopardyPressButton0
@@ -21,6 +23,8 @@ type Command struct {
 
 func (v Command) MarshalJSON() ([]byte, error) {
 	switch v.Type {
+	case "JeopardyChooseQuestion":
+		return json.Marshal(struct { T string `json:"type"`; CommandJeopardyChooseQuestion0 }{ v.Type, v.JeopardyChooseQuestion })
 	case "JeopardyPlayerIsCorrect":
 		return json.Marshal(struct { T string `json:"type"`; CommandJeopardyPlayerIsCorrect0 }{ v.Type, v.JeopardyPlayerIsCorrect })
 	case "JeopardyPressButton":
@@ -40,6 +44,8 @@ func (v *Command) UnmarshalJSON(b []byte) error {
 
 	var err error
 	switch t.T {
+	case "JeopardyChooseQuestion":
+		err = json.Unmarshal(b, &v.JeopardyChooseQuestion)
 	case "JeopardyPlayerIsCorrect":
 		err = json.Unmarshal(b, &v.JeopardyPlayerIsCorrect)
 	case "JeopardyPressButton":
@@ -58,6 +64,10 @@ func (v *Command) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+type CommandJeopardyChooseQuestion0 struct {
+	Data CommandJeopardyChooseQuestion `json:"data"`
+}
+
 type CommandJeopardyPlayerIsCorrect0 struct {
 	Data CommandJeopardyPlayerIsCorrect `json:"data"`
 }
@@ -68,6 +78,15 @@ type CommandJeopardyPressButton0 struct {
 
 type CommandJoinGame0 struct {
 	Data CommandJoinGame `json:"data"`
+}
+
+// CommandJeopardyChooseQuestion is sent by a player to choose a question.
+// The server must do validation to ensure that the player is allowed to
+// choose the question.
+type CommandJeopardyChooseQuestion struct {
+	Category string `json:"category"`
+
+	Question string `json:"question"`
 }
 
 // CommandJeopardyPlayerIsCorrect is emitted by a game moderator to indicate
@@ -214,6 +233,8 @@ type EventGameEnded struct {
 // categories.
 type EventJeopardyBeginQuestion struct {
 	Category string `json:"category"`
+
+	Chooser PlayerName `json:"chooser"`
 
 	Question string `json:"question"`
 }
