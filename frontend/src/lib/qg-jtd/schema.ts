@@ -1,3 +1,5 @@
+import * as jtd from "jtd";
+
 export default {
   definitions: {
     Error: {
@@ -174,4 +176,4 @@ export default {
       },
     },
   },
-};
+} as jtd.Schema;

@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+
+main() {
+	local imports assertType file output
+	imports=()
+
+	while true; do
+		case "$1" in
+		--import|-i)
+			import="$2"
+			importAs="${import##*/}"
+			if [[ "$import" == *=* ]]; then
+				importAs="${import#*=}"
+				import="${import%%=*}"
+			fi
+			imports+=( "import * as $importAs from \"$import\"" )
+			shift
+			;;
+		--type|-t)
+			assertType="$2"
+			shift
+			;;
+		*)
+			break
+			;;
+		esac
+		shift
+	done
+
+	file="$1"
+	output="$2"
+
+	{
+		for import in "${imports[@]}"; do
+			echo "$import"
+		done
+		echo
+		echo -n "export default $(cat "$file")"
+		if [[ "$assertType" != "" ]]; then
+			echo " as $assertType"
+		else
+			echo
+		fi
+	} > "$output"
+
+	prettier -w "$output"
+}
+
+main "$@"
