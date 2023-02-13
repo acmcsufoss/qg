@@ -6,9 +6,8 @@ local schema = import '../lib/schema.jsonnet';
       starts.
     |||,
     schema.properties({
-      currentScore: schema.number,
       leaderboard: schema.ref('Leaderboard'),
-      isChooser: schema.boolean,
+      chooser: schema.ref('PlayerName'),
     }),
   ),
 
@@ -26,6 +25,7 @@ local schema = import '../lib/schema.jsonnet';
       chooser: schema.ref('PlayerName'),
       category: schema.string,
       question: schema.string,
+      points: schema.float,
     }),
   ),
 
@@ -62,8 +62,8 @@ local schema = import '../lib/schema.jsonnet';
       choose the question.
     |||,
     schema.properties({
-      category: schema.string,
-      question: schema.string,
+      category: schema.int,
+      question: schema.int,
     }),
   ),
 
@@ -76,14 +76,17 @@ local schema = import '../lib/schema.jsonnet';
     schema.empty,
   ),
 
-  CommandJeopardyPlayerIsCorrect: schema.description(
+  CommandJeopardyPlayerJudgment: schema.description(
     |||
-      CommandJeopardyPlayerIsCorrect is emitted by a game moderator to indicate
-      that a player has answered a question correctly. The winning player is
+      CommandJeopardyPlayerJudgment is emitted by a game moderator to indicate
+      whether a player has answered a question correctly. The winning player is
       whoever the last EventJeopardyButtonPressed event indicated. That player
       will instantly receive the points for the question, and the game will let
-      them choose the next category and question.
+      them choose the next category and question. If the player answered wrong,
+      then the game will let others press the button.
     |||,
-    schema.empty,
+    schema.properties({
+      correct: schema.boolean,
+    }),
   ),
 }

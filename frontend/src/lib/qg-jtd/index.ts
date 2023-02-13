@@ -3,36 +3,11 @@
 export type Qg = any;
 
 export type Command =
-  | CommandEndGame0
-  | CommandJeopardyChooseQuestion0
-  | CommandJeopardyPlayerIsCorrect0
-  | CommandJeopardyPressButton0
-  | CommandJoinGame0;
-
-export interface CommandEndGame0 {
-  type: "EndGame";
-  data: CommandEndGame;
-}
-
-export interface CommandJeopardyChooseQuestion0 {
-  type: "JeopardyChooseQuestion";
-  data: CommandJeopardyChooseQuestion;
-}
-
-export interface CommandJeopardyPlayerIsCorrect0 {
-  type: "JeopardyPlayerIsCorrect";
-  data: CommandJeopardyPlayerIsCorrect;
-}
-
-export interface CommandJeopardyPressButton0 {
-  type: "JeopardyPressButton";
-  data: CommandJeopardyPressButton;
-}
-
-export interface CommandJoinGame0 {
-  type: "JoinGame";
-  data: CommandJoinGame;
-}
+  | CommandEndGame
+  | CommandJeopardyChooseQuestion
+  | CommandJeopardyPlayerJudgment
+  | CommandJeopardyPressButton
+  | CommandJoinGame;
 
 /**
  * CommandEndGame is sent by a client to end the current game. The server
@@ -40,6 +15,8 @@ export interface CommandJoinGame0 {
  * host) can end the game.
  */
 export interface CommandEndGame {
+  type: "EndGame";
+
   /**
    * declareWinner determines whether the game should be ended with a
    * winner or not. If true, the game will be ended with a winner. If
@@ -54,25 +31,32 @@ export interface CommandEndGame {
  * choose the question.
  */
 export interface CommandJeopardyChooseQuestion {
-  category: string;
-  question: string;
+  type: "JeopardyChooseQuestion";
+  category: number;
+  question: number;
 }
 
 /**
- * CommandJeopardyPlayerIsCorrect is emitted by a game moderator to indicate
- * that a player has answered a question correctly. The winning player is
+ * CommandJeopardyPlayerJudgment is emitted by a game moderator to indicate
+ * whether a player has answered a question correctly. The winning player is
  * whoever the last EventJeopardyButtonPressed event indicated. That player
  * will instantly receive the points for the question, and the game will let
- * them choose the next category and question.
+ * them choose the next category and question. If the player answered wrong,
+ * then the game will let others press the button.
  */
-export type CommandJeopardyPlayerIsCorrect = any;
+export interface CommandJeopardyPlayerJudgment {
+  type: "JeopardyPlayerJudgment";
+  correct: boolean;
+}
 
 /**
  * CommandJeopardyPressButton is emitted when a player presses the button
  * during a question. It is only valid to emit this command when the game is
  * in the question state.
  */
-export type CommandJeopardyPressButton = any;
+export interface CommandJeopardyPressButton {
+  type: "JeopardyPressButton";
+}
 
 /**
  * CommandJoinGame is sent by a client to join a game. The client (or the
@@ -80,10 +64,12 @@ export type CommandJeopardyPressButton = any;
  * an EventJoinedGame.
  */
 export interface CommandJoinGame {
+  type: "JoinGame";
+
   /**
    * gameID is the ID of the game to join.
    */
-  gameID: string;
+  gameID: GameId;
 
   /**
    * moderatorPassword is the password of the moderator of the game.
@@ -107,53 +93,19 @@ export interface Error {
 }
 
 export type Event =
-  | EventGameEnded0
-  | EventJeopardyBeginQuestion0
-  | EventJeopardyButtonPressed0
-  | EventJeopardyResumeButton0
-  | EventJeopardyTurnEnded0
-  | EventJoinedGame0
-  | EventPlayerJoined0;
-
-export interface EventGameEnded0 {
-  type: "GameEnded";
-  data: EventGameEnded;
-}
-
-export interface EventJeopardyBeginQuestion0 {
-  type: "JeopardyBeginQuestion";
-  data: EventJeopardyBeginQuestion;
-}
-
-export interface EventJeopardyButtonPressed0 {
-  type: "JeopardyButtonPressed";
-  data: EventJeopardyButtonPressed;
-}
-
-export interface EventJeopardyResumeButton0 {
-  type: "JeopardyResumeButton";
-  data: EventJeopardyResumeButton;
-}
-
-export interface EventJeopardyTurnEnded0 {
-  type: "JeopardyTurnEnded";
-  data: EventJeopardyTurnEnded;
-}
-
-export interface EventJoinedGame0 {
-  type: "JoinedGame";
-  data: EventJoinedGame;
-}
-
-export interface EventPlayerJoined0 {
-  type: "PlayerJoined";
-  data: EventPlayerJoined;
-}
+  | EventGameEnded
+  | EventJeopardyBeginQuestion
+  | EventJeopardyButtonPressed
+  | EventJeopardyResumeButton
+  | EventJeopardyTurnEnded
+  | EventJoinedGame
+  | EventPlayerJoined;
 
 /**
  * EventGameEnded is emitted when the current game ends.
  */
 export interface EventGameEnded {
+  type: "GameEnded";
   leaderboard: Leaderboard;
 }
 
@@ -167,8 +119,10 @@ export interface EventGameEnded {
  * categories.
  */
 export interface EventJeopardyBeginQuestion {
+  type: "JeopardyBeginQuestion";
   category: string;
   chooser: PlayerName;
+  points: number;
   question: string;
 }
 
@@ -178,6 +132,7 @@ export interface EventJeopardyBeginQuestion {
  * emitted when the game is in the "question" state.
  */
 export interface EventJeopardyButtonPressed {
+  type: "JeopardyButtonPressed";
   playerName: PlayerName;
 }
 
@@ -191,6 +146,7 @@ export interface EventJeopardyButtonPressed {
  * the button, so they cannot press it again.
  */
 export interface EventJeopardyResumeButton {
+  type: "JeopardyResumeButton";
   alreadyPressed: boolean;
 }
 
@@ -199,8 +155,8 @@ export interface EventJeopardyResumeButton {
  * starts.
  */
 export interface EventJeopardyTurnEnded {
-  currentScore: number;
-  isChooser: boolean;
+  type: "JeopardyTurnEnded";
+  chooser: PlayerName;
   leaderboard: Leaderboard;
 }
 
@@ -210,53 +166,42 @@ export interface EventJeopardyTurnEnded {
  * confused with EventPlayerJoinedGame, which is emitted when any player
  * joins the current game.
  */
-export type EventJoinedGame = any;
+export interface EventJoinedGame {
+  type: "JoinedGame";
+}
 
 /**
  * EventPlayerJoined is emitted when a player joins the current game.
  */
 export interface EventPlayerJoined {
+  type: "PlayerJoined";
   playerName: PlayerName;
 }
 
 /**
- * Game is the main game object. It contains all the information about the
- * game.
+ * GameData is the game data. It contains all the information about the game.
  */
-export type Game = GameJeopardy | GameKahoot;
+export type GameData = GameDataJeopardy | GameDataKahoot;
 
-export interface GameJeopardy {
+export interface GameDataJeopardy {
   game: "jeopardy";
-  data: Jeopardy;
+  data: JeopardyGameData;
 }
 
-export interface GameKahoot {
+export interface GameDataKahoot {
   game: "kahoot";
-  data: Kahoot;
+  data: KahootGameData;
 }
 
 /**
- * JeopardyGame is the game data for a Jeopardy game.
+ * GameID is the unique identifier for a game. Each player must type this
+ * code to join the game.
  */
-export interface Jeopardy {
-  categories: JeopardyCategory[];
+export type GameId = string;
 
-  /**
-   * moderators enables moderators being able to join.
-   */
-  moderators?: boolean;
-
-  /**
-   * require_name, if true, will require members to input a name before
-   * we can participate.
-   */
-  require_name?: boolean;
-
-  /**
-   * score_multiplier is the score multiplier for each question. The
-   * default is 100.
-   */
-  score_multiplier?: number;
+export enum GameType {
+  Jeopardy = "jeopardy",
+  Kahoot = "kahoot",
 }
 
 /**
@@ -275,6 +220,19 @@ export interface JeopardyCategory {
 }
 
 /**
+ * JeopardyGameData is the game data for a Jeopardy game.
+ */
+export interface JeopardyGameData {
+  categories: JeopardyCategory[];
+
+  /**
+   * score_multiplier is the score multiplier for each question. The
+   * default is 100.
+   */
+  score_multiplier?: number;
+}
+
+/**
  * JeopardyGameInfo is the initial information for a Jeopardy game. This type
  * contains no useful information about the entire game data, so it's used to
  * send to players the first time they join.
@@ -282,7 +240,6 @@ export interface JeopardyCategory {
 export interface JeopardyGameInfo {
   categories: string[];
   numQuestions: number;
-  players: PlayerName[];
   scoreMultiplier: number;
 }
 
@@ -297,9 +254,9 @@ export interface JeopardyQuestion {
 }
 
 /**
- * KahootGame is the game data for a Kahoot game.
+ * KahootGameData is the game data for a Kahoot game.
  */
-export interface Kahoot {
+export interface KahootGameData {
   /**
    * questions are the questions in the game.
    */

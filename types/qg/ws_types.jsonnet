@@ -44,7 +44,7 @@ local schema = import '../lib/schema.jsonnet';
     schema.properties({
       gameID: schema.description(
         'gameID is the ID of the game to join.',
-        schema.string
+        schema.ref('GameID')
       ),
       playerName: schema.description(
         'playerName is the wanted name of the user.',

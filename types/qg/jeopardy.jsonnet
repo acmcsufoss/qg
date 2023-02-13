@@ -1,27 +1,14 @@
 local schema = import '../lib/schema.jsonnet';
 {
-  Jeopardy: schema.description(
+  JeopardyGameData: schema.description(
     |||
-      JeopardyGame is the game data for a Jeopardy game.
+      JeopardyGameData is the game data for a Jeopardy game.
     |||,
     schema.properties(
       {
         categories: schema.arrayOf(schema.ref('JeopardyCategory')),
       },
       optionalProperties={
-        moderators: schema.description(
-          |||
-            moderators enables moderators being able to join.
-          |||,
-          schema.boolean,
-        ),
-        require_name: schema.description(
-          |||
-            require_name, if true, will require members to input a name before
-            we can participate.
-          |||,
-          schema.boolean,
-        ),
         score_multiplier: schema.description(
           |||
             score_multiplier is the score multiplier for each question. The
@@ -29,6 +16,12 @@ local schema = import '../lib/schema.jsonnet';
           |||,
           schema.float,
         ),
+        // moderators: schema.description(
+        //   |||
+        //     moderators enables moderators being able to join.
+        //   |||,
+        //   schema.boolean,
+        // ),
         // score_to_win: schema.description(
         //   |||
         //     score_to_win is the score required to win the game.
@@ -84,10 +77,9 @@ local schema = import '../lib/schema.jsonnet';
       send to players the first time they join.
     |||,
     schema.properties({
-      players: schema.arrayOf(schema.ref('PlayerName')),
       categories: schema.arrayOf(schema.string),
       numQuestions: schema.integer,
-      scoreMultiplier: schema.integer,
+      scoreMultiplier: schema.float,
     }),
   ),
 }

@@ -1,6 +1,12 @@
 { pkgs ? import <nixpkgs> {} }:
 
-let	goapi-gen = pkgs.buildGoModule {
+let fetchPatchFromGitHub = { owner, repo, rev, sha256 }:
+		pkgs.fetchpatch {
+			url = "https://github.com/${owner}/${repo}/commit/${rev}.patch";
+			inherit sha256;
+		};
+
+	goapi-gen = pkgs.buildGoModule {
 		name = "goapi-gen";
 		version = "081d60b";
 
@@ -55,22 +61,38 @@ let	goapi-gen = pkgs.buildGoModule {
 		vendorSha256 = "0gjj1zn29vyx704y91g77zrs770y2rakksnn9dhg8r6na94njh5a";
 	};
 	
-	jtd-codegen = pkgs.runCommandCC "jtd-codegen" (rec {
-		version = "0.4.1";
-		src = pkgs.fetchzip {
-			url = "https://github.com/jsontypedef/json-typedef-codegen/releases/download/v${version}/x86_64-unknown-linux-gnu.zip";
-			sha256 = "0rwa03ka4z48b910nff1i3kphg2saj5ny7fgp4mx04vai4v4csjx";
+	jtd-codegen = pkgs.rustPlatform.buildRustPackage {
+		pname = "jtd-codegen";
+		version = "dev";
+
+		# TODO: push the PR and replace this.
+		src = pkgs.fetchFromGitHub {
+			owner  = "jsontypedef";
+			repo   = "json-typedef-codegen";
+			rev    = "v0.4.1";
+			sha256 = "1922k67diwrbcm6rq18pzr9627xzkv00k3y2dc4843hn25kqqha5";
 		};
-		nativeBuildInputs = with pkgs; [
-			autoPatchelfHook
-			patchelf
+
+		patches = [
+			(fetchPatchFromGitHub {
+				owner  = "diamondburned";
+				repo   = "json-typedef-codegen";
+				rev    = "dcbba615d8a0a398eef6675670dbe0ea7d3e3a8e";
+				sha256 = "1zb5fd4d9d5lxq7shcj0vkw4bqxw308pyhf25d6y67rgnkslmgx4";
+			})
+			(fetchPatchFromGitHub {
+				owner  = "diamondburned";
+				repo   = "json-typedef-codegen";
+				rev    = "63148e9e727f1e0110d554d4eb031a734bdb60e1";
+				sha256 = "16gjdz470j8zf5xlqbvs1pkvq0kpw065pbbb4jdh5yw450f9ywak";
+			})
 		];
-	}) ''
-		mkdir -p $out/bin
-		cp --no-preserve=mode,ownership $src/jtd-codegen $out/bin/jtd-codegen
-		chmod +x $out/bin/jtd-codegen
-		patchelf --set-interpreter "$(cat $NIX_CC/nix-support/dynamic-linker)" $out/bin/jtd-codegen
-	'';
+
+		cargoHash = "sha256:1hax2whf0kfb2sw2a6rams2c46qk3360wkdxp0rgwfyjsxz5znk3";
+
+		# These tests need Docker for some stupid reason.
+		doCheck = false;
+	};
 
 	jsonnet-language-server =
 		let src = pkgs.fetchFromGitHub {

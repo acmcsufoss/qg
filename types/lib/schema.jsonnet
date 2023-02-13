@@ -2,7 +2,8 @@ local stdx = import 'stdx.jsonnet';
 // https://jsontypedef.com/docs/jtd-in-5-minutes/#discriminator-schemas
 {
   // All jtd-defined types.
-  empty: {},
+  empty: $.properties({}),
+  all: {},
   boolean: { type: 'boolean' },
   string: { type: 'string' },
   timestamp: { type: 'timestamp' },
@@ -18,14 +19,17 @@ local stdx = import 'stdx.jsonnet';
   int: $.integer,
   float: $.float64,
   number: $.float,
-  enums: function(values) { enums: values },
+  enum: function(values) { enum: values },
   arrayOf: $.elements,
   elements: function(type) { elements: type },
-  properties: function(properties, optionalProperties={}, additionalProperties=false) {
-    properties: properties,
-    optionalProperties: optionalProperties,
-    additionalProperties: additionalProperties,
-  },
+  properties: function(properties, optionalProperties={}, additionalProperties=false)
+    { properties: properties }
+    + (if optionalProperties != {}
+       then { optionalProperties: optionalProperties }
+       else {})
+    + (if additionalProperties != false
+       then { additionalProperties: true }
+       else {}),
   values: function(type) { values: type },
   unionOf(discriminator, types): {
     discriminator: discriminator,
@@ -39,7 +43,10 @@ local stdx = import 'stdx.jsonnet';
     ),
   },
   typeUnion(types): $.unionOf('type', types),
-  discriminator: $.unionOf,
+  discriminator: function(discriminator, mapping) {
+    discriminator: discriminator,
+    mapping: mapping,
+  },
   ref(ref): { ref: ref },
   // Extra overrides.
   nullable: function(any) any { nullable: true },

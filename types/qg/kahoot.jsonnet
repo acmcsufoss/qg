@@ -1,8 +1,8 @@
 local schema = import '../lib/schema.jsonnet';
 {
-  Kahoot: schema.description(
+  KahootGameData: schema.description(
     |||
-      KahootGame is the game data for a Kahoot game.
+      KahootGameData is the game data for a Kahoot game.
     |||,
     schema.properties(
       {

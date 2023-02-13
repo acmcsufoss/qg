@@ -1,14 +1,26 @@
 local schema = import '../lib/schema.jsonnet';
 {
-  Game: schema.description(
+  GameData: schema.description(
     |||
-      Game is the main game object. It contains all the information about the
-      game.
+      GameData is the game data. It contains all the information about the game.
     |||,
     schema.unionOf('game', {
-      jeopardy: 'Jeopardy',
-      kahoot: 'Kahoot',
+      jeopardy: 'JeopardyGameData',
+      kahoot: 'KahootGameData',
     })
+  ),
+
+  GameType: schema.enum([
+    'jeopardy',
+    'kahoot',
+  ]),
+
+  GameID: schema.description(
+    |||
+      GameID is the unique identifier for a game. Each player must type this
+      code to join the game.
+    |||,
+    schema.string,
   ),
 
   PlayerName: schema.description(

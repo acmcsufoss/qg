@@ -10,54 +10,81 @@ import (
 type Qg = interface{}
 
 type Command struct {
-	Type string
+	// Value can be the following types:
+	//  - [CommandEndGame] (EndGame)
+	//  - [CommandJeopardyChooseQuestion] (JeopardyChooseQuestion)
+	//  - [CommandJeopardyPlayerJudgment] (JeopardyPlayerJudgment)
+	//  - [CommandJeopardyPressButton] (JeopardyPressButton)
+	//  - [CommandJoinGame] (JoinGame)
+	Value valueCommand
 
-	EndGame CommandEndGame0
-
-	JeopardyChooseQuestion CommandJeopardyChooseQuestion0
-
-	JeopardyPlayerIsCorrect CommandJeopardyPlayerIsCorrect0
-
-	JeopardyPressButton CommandJeopardyPressButton0
-
-	JoinGame CommandJoinGame0
+	t string
 }
 
 func (v Command) MarshalJSON() ([]byte, error) {
-	switch v.Type {
-	case "EndGame":
-		return json.Marshal(struct { T string `json:"type"`; CommandEndGame0 }{ v.Type, v.EndGame })
-	case "JeopardyChooseQuestion":
-		return json.Marshal(struct { T string `json:"type"`; CommandJeopardyChooseQuestion0 }{ v.Type, v.JeopardyChooseQuestion })
-	case "JeopardyPlayerIsCorrect":
-		return json.Marshal(struct { T string `json:"type"`; CommandJeopardyPlayerIsCorrect0 }{ v.Type, v.JeopardyPlayerIsCorrect })
-	case "JeopardyPressButton":
-		return json.Marshal(struct { T string `json:"type"`; CommandJeopardyPressButton0 }{ v.Type, v.JeopardyPressButton })
-	case "JoinGame":
-		return json.Marshal(struct { T string `json:"type"`; CommandJoinGame0 }{ v.Type, v.JoinGame })
+	switch value := v.Value.(type) {
+	case CommandEndGame:
+		return json.Marshal(struct {
+			T string `json:"type"`
+			CommandEndGame
+		}{"EndGame", value})
+	case CommandJeopardyChooseQuestion:
+		return json.Marshal(struct {
+			T string `json:"type"`
+			CommandJeopardyChooseQuestion
+		}{"JeopardyChooseQuestion", value})
+	case CommandJeopardyPlayerJudgment:
+		return json.Marshal(struct {
+			T string `json:"type"`
+			CommandJeopardyPlayerJudgment
+		}{"JeopardyPlayerJudgment", value})
+	case CommandJeopardyPressButton:
+		return json.Marshal(struct {
+			T string `json:"type"`
+			CommandJeopardyPressButton
+		}{"JeopardyPressButton", value})
+	case CommandJoinGame:
+		return json.Marshal(struct {
+			T string `json:"type"`
+			CommandJoinGame
+		}{"JoinGame", value})
+	default:
+		panic("unreachable")
 	}
-
-	return nil, fmt.Errorf("bad Type value: %s", v.Type)
 }
 
 func (v *Command) UnmarshalJSON(b []byte) error {
-	var t struct { T string `json:"type"` }
+	var t struct {
+		T string `json:"type"`
+	}
 	if err := json.Unmarshal(b, &t); err != nil {
 		return err
 	}
 
+	var value valueCommand
 	var err error
+
 	switch t.T {
 	case "EndGame":
-		err = json.Unmarshal(b, &v.EndGame)
+		var v CommandEndGame
+		err = json.Unmarshal(b, &v)
+		value = v
 	case "JeopardyChooseQuestion":
-		err = json.Unmarshal(b, &v.JeopardyChooseQuestion)
-	case "JeopardyPlayerIsCorrect":
-		err = json.Unmarshal(b, &v.JeopardyPlayerIsCorrect)
+		var v CommandJeopardyChooseQuestion
+		err = json.Unmarshal(b, &v)
+		value = v
+	case "JeopardyPlayerJudgment":
+		var v CommandJeopardyPlayerJudgment
+		err = json.Unmarshal(b, &v)
+		value = v
 	case "JeopardyPressButton":
-		err = json.Unmarshal(b, &v.JeopardyPressButton)
+		var v CommandJeopardyPressButton
+		err = json.Unmarshal(b, &v)
+		value = v
 	case "JoinGame":
-		err = json.Unmarshal(b, &v.JoinGame)
+		var v CommandJoinGame
+		err = json.Unmarshal(b, &v)
+		value = v
 	default:
 		err = fmt.Errorf("bad Type value: %s", t.T)
 	}
@@ -66,29 +93,20 @@ func (v *Command) UnmarshalJSON(b []byte) error {
 		return err
 	}
 
-	v.Type = t.T
+	v.t = t.T
+	v.Value = value
 	return nil
 }
 
-type CommandEndGame0 struct {
-	Data CommandEndGame `json:"data"`
+type valueCommand interface {
+	isCommand()
 }
 
-type CommandJeopardyChooseQuestion0 struct {
-	Data CommandJeopardyChooseQuestion `json:"data"`
-}
-
-type CommandJeopardyPlayerIsCorrect0 struct {
-	Data CommandJeopardyPlayerIsCorrect `json:"data"`
-}
-
-type CommandJeopardyPressButton0 struct {
-	Data CommandJeopardyPressButton `json:"data"`
-}
-
-type CommandJoinGame0 struct {
-	Data CommandJoinGame `json:"data"`
-}
+func (CommandEndGame) isCommand()                {}
+func (CommandJeopardyChooseQuestion) isCommand() {}
+func (CommandJeopardyPlayerJudgment) isCommand() {}
+func (CommandJeopardyPressButton) isCommand()    {}
+func (CommandJoinGame) isCommand()               {}
 
 // CommandEndGame is sent by a client to end the current game. The server
 // will respond with an EventGameEnded. Only game moderators (including the
@@ -104,33 +122,34 @@ type CommandEndGame struct {
 // The server must do validation to ensure that the player is allowed to
 // choose the question.
 type CommandJeopardyChooseQuestion struct {
-	Category string `json:"category"`
-
-	Question string `json:"question"`
+	Category int32 `json:"category"`
+	Question int32 `json:"question"`
 }
 
-// CommandJeopardyPlayerIsCorrect is emitted by a game moderator to indicate
-// that a player has answered a question correctly. The winning player is
+// CommandJeopardyPlayerJudgment is emitted by a game moderator to indicate
+// whether a player has answered a question correctly. The winning player is
 // whoever the last EventJeopardyButtonPressed event indicated. That player
 // will instantly receive the points for the question, and the game will let
-// them choose the next category and question.
-type CommandJeopardyPlayerIsCorrect = interface{}
+// them choose the next category and question. If the player answered wrong,
+// then the game will let others press the button.
+type CommandJeopardyPlayerJudgment struct {
+	Correct bool `json:"correct"`
+}
 
 // CommandJeopardyPressButton is emitted when a player presses the button
 // during a question. It is only valid to emit this command when the game is
 // in the question state.
-type CommandJeopardyPressButton = interface{}
+type CommandJeopardyPressButton struct {
+}
 
 // CommandJoinGame is sent by a client to join a game. The client (or the
 // user) supplies a game ID and a player name. The server will respond with
 // an EventJoinedGame.
 type CommandJoinGame struct {
 	// gameID is the ID of the game to join.
-	GameID string `json:"gameID"`
-
+	GameID GameID `json:"gameID"`
 	// moderatorPassword is the password of the moderator of the game.
 	ModeratorPassword *string `json:"moderatorPassword"`
-
 	// playerName is the wanted name of the user.
 	PlayerName PlayerName `json:"playerName"`
 }
@@ -142,66 +161,101 @@ type Error struct {
 }
 
 type Event struct {
-	Type string
+	// Value can be the following types:
+	//  - [EventGameEnded] (GameEnded)
+	//  - [EventJeopardyBeginQuestion] (JeopardyBeginQuestion)
+	//  - [EventJeopardyButtonPressed] (JeopardyButtonPressed)
+	//  - [EventJeopardyResumeButton] (JeopardyResumeButton)
+	//  - [EventJeopardyTurnEnded] (JeopardyTurnEnded)
+	//  - [EventJoinedGame] (JoinedGame)
+	//  - [EventPlayerJoined] (PlayerJoined)
+	Value valueEvent
 
-	GameEnded EventGameEnded0
-
-	JeopardyBeginQuestion EventJeopardyBeginQuestion0
-
-	JeopardyButtonPressed EventJeopardyButtonPressed0
-
-	JeopardyResumeButton EventJeopardyResumeButton0
-
-	JeopardyTurnEnded EventJeopardyTurnEnded0
-
-	JoinedGame EventJoinedGame0
-
-	PlayerJoined EventPlayerJoined0
+	t string
 }
 
 func (v Event) MarshalJSON() ([]byte, error) {
-	switch v.Type {
-	case "GameEnded":
-		return json.Marshal(struct { T string `json:"type"`; EventGameEnded0 }{ v.Type, v.GameEnded })
-	case "JeopardyBeginQuestion":
-		return json.Marshal(struct { T string `json:"type"`; EventJeopardyBeginQuestion0 }{ v.Type, v.JeopardyBeginQuestion })
-	case "JeopardyButtonPressed":
-		return json.Marshal(struct { T string `json:"type"`; EventJeopardyButtonPressed0 }{ v.Type, v.JeopardyButtonPressed })
-	case "JeopardyResumeButton":
-		return json.Marshal(struct { T string `json:"type"`; EventJeopardyResumeButton0 }{ v.Type, v.JeopardyResumeButton })
-	case "JeopardyTurnEnded":
-		return json.Marshal(struct { T string `json:"type"`; EventJeopardyTurnEnded0 }{ v.Type, v.JeopardyTurnEnded })
-	case "JoinedGame":
-		return json.Marshal(struct { T string `json:"type"`; EventJoinedGame0 }{ v.Type, v.JoinedGame })
-	case "PlayerJoined":
-		return json.Marshal(struct { T string `json:"type"`; EventPlayerJoined0 }{ v.Type, v.PlayerJoined })
+	switch value := v.Value.(type) {
+	case EventGameEnded:
+		return json.Marshal(struct {
+			T string `json:"type"`
+			EventGameEnded
+		}{"GameEnded", value})
+	case EventJeopardyBeginQuestion:
+		return json.Marshal(struct {
+			T string `json:"type"`
+			EventJeopardyBeginQuestion
+		}{"JeopardyBeginQuestion", value})
+	case EventJeopardyButtonPressed:
+		return json.Marshal(struct {
+			T string `json:"type"`
+			EventJeopardyButtonPressed
+		}{"JeopardyButtonPressed", value})
+	case EventJeopardyResumeButton:
+		return json.Marshal(struct {
+			T string `json:"type"`
+			EventJeopardyResumeButton
+		}{"JeopardyResumeButton", value})
+	case EventJeopardyTurnEnded:
+		return json.Marshal(struct {
+			T string `json:"type"`
+			EventJeopardyTurnEnded
+		}{"JeopardyTurnEnded", value})
+	case EventJoinedGame:
+		return json.Marshal(struct {
+			T string `json:"type"`
+			EventJoinedGame
+		}{"JoinedGame", value})
+	case EventPlayerJoined:
+		return json.Marshal(struct {
+			T string `json:"type"`
+			EventPlayerJoined
+		}{"PlayerJoined", value})
+	default:
+		panic("unreachable")
 	}
-
-	return nil, fmt.Errorf("bad Type value: %s", v.Type)
 }
 
 func (v *Event) UnmarshalJSON(b []byte) error {
-	var t struct { T string `json:"type"` }
+	var t struct {
+		T string `json:"type"`
+	}
 	if err := json.Unmarshal(b, &t); err != nil {
 		return err
 	}
 
+	var value valueEvent
 	var err error
+
 	switch t.T {
 	case "GameEnded":
-		err = json.Unmarshal(b, &v.GameEnded)
+		var v EventGameEnded
+		err = json.Unmarshal(b, &v)
+		value = v
 	case "JeopardyBeginQuestion":
-		err = json.Unmarshal(b, &v.JeopardyBeginQuestion)
+		var v EventJeopardyBeginQuestion
+		err = json.Unmarshal(b, &v)
+		value = v
 	case "JeopardyButtonPressed":
-		err = json.Unmarshal(b, &v.JeopardyButtonPressed)
+		var v EventJeopardyButtonPressed
+		err = json.Unmarshal(b, &v)
+		value = v
 	case "JeopardyResumeButton":
-		err = json.Unmarshal(b, &v.JeopardyResumeButton)
+		var v EventJeopardyResumeButton
+		err = json.Unmarshal(b, &v)
+		value = v
 	case "JeopardyTurnEnded":
-		err = json.Unmarshal(b, &v.JeopardyTurnEnded)
+		var v EventJeopardyTurnEnded
+		err = json.Unmarshal(b, &v)
+		value = v
 	case "JoinedGame":
-		err = json.Unmarshal(b, &v.JoinedGame)
+		var v EventJoinedGame
+		err = json.Unmarshal(b, &v)
+		value = v
 	case "PlayerJoined":
-		err = json.Unmarshal(b, &v.PlayerJoined)
+		var v EventPlayerJoined
+		err = json.Unmarshal(b, &v)
+		value = v
 	default:
 		err = fmt.Errorf("bad Type value: %s", t.T)
 	}
@@ -210,37 +264,22 @@ func (v *Event) UnmarshalJSON(b []byte) error {
 		return err
 	}
 
-	v.Type = t.T
+	v.t = t.T
+	v.Value = value
 	return nil
 }
 
-type EventGameEnded0 struct {
-	Data EventGameEnded `json:"data"`
+type valueEvent interface {
+	isEvent()
 }
 
-type EventJeopardyBeginQuestion0 struct {
-	Data EventJeopardyBeginQuestion `json:"data"`
-}
-
-type EventJeopardyButtonPressed0 struct {
-	Data EventJeopardyButtonPressed `json:"data"`
-}
-
-type EventJeopardyResumeButton0 struct {
-	Data EventJeopardyResumeButton `json:"data"`
-}
-
-type EventJeopardyTurnEnded0 struct {
-	Data EventJeopardyTurnEnded `json:"data"`
-}
-
-type EventJoinedGame0 struct {
-	Data EventJoinedGame `json:"data"`
-}
-
-type EventPlayerJoined0 struct {
-	Data EventPlayerJoined `json:"data"`
-}
+func (EventGameEnded) isEvent()             {}
+func (EventJeopardyBeginQuestion) isEvent() {}
+func (EventJeopardyButtonPressed) isEvent() {}
+func (EventJeopardyResumeButton) isEvent()  {}
+func (EventJeopardyTurnEnded) isEvent()     {}
+func (EventJoinedGame) isEvent()            {}
+func (EventPlayerJoined) isEvent()          {}
 
 // EventGameEnded is emitted when the current game ends.
 type EventGameEnded struct {
@@ -250,16 +289,15 @@ type EventGameEnded struct {
 // EventJeopardyBeginQuestion is emitted when a question begins within this
 // Jeopardy game. It is usually emitted once the chooser player has chosen a
 // category and value.
-// 
+//
 // Each category name and question value will map to a category and question
 // within the game data. Note that a question may repeat across multiple
 // categories.
 type EventJeopardyBeginQuestion struct {
-	Category string `json:"category"`
-
-	Chooser PlayerName `json:"chooser"`
-
-	Question string `json:"question"`
+	Category string     `json:"category"`
+	Chooser  PlayerName `json:"chooser"`
+	Points   float64    `json:"points"`
+	Question string     `json:"question"`
 }
 
 // EventJeopardyButtonPressed is emitted when any player had pressed a button
@@ -273,7 +311,7 @@ type EventJeopardyButtonPressed struct {
 // press the button whenever they are ready to answer the question. This
 // could happen if the other player who pressed the button first got the
 // question wrong.
-// 
+//
 // Note that if alreadyPressed is true, then the player has already pressed
 // the button, so they cannot press it again.
 type EventJeopardyResumeButton struct {
@@ -283,10 +321,7 @@ type EventJeopardyResumeButton struct {
 // EventJeopardyTurnEnded is emitted when a turn ends or when the game first
 // starts.
 type EventJeopardyTurnEnded struct {
-	CurrentScore float64 `json:"currentScore"`
-
-	IsChooser bool `json:"isChooser"`
-
+	Chooser     PlayerName  `json:"chooser"`
 	Leaderboard Leaderboard `json:"leaderboard"`
 }
 
@@ -294,46 +329,61 @@ type EventJeopardyTurnEnded struct {
 // reply to CommandJoinGame and is only for the current player. Not to be
 // confused with EventPlayerJoinedGame, which is emitted when any player
 // joins the current game.
-type EventJoinedGame = interface{}
+type EventJoinedGame struct {
+}
 
 // EventPlayerJoined is emitted when a player joins the current game.
 type EventPlayerJoined struct {
 	PlayerName PlayerName `json:"playerName"`
 }
 
-// Game is the main game object. It contains all the information about the
-// game.
-type Game struct {
-	Game string
+// GameData is the game data. It contains all the information about the game.
+type GameData struct {
+	// Value can be the following types:
+	//  - [GameDataJeopardy] (jeopardy)
+	//  - [GameDataKahoot] (kahoot)
+	Value valueGameData
 
-	Jeopardy GameJeopardy
-
-	Kahoot GameKahoot
+	t string
 }
 
-func (v Game) MarshalJSON() ([]byte, error) {
-	switch v.Game {
-	case "jeopardy":
-		return json.Marshal(struct { T string `json:"game"`; GameJeopardy }{ v.Game, v.Jeopardy })
-	case "kahoot":
-		return json.Marshal(struct { T string `json:"game"`; GameKahoot }{ v.Game, v.Kahoot })
+func (v GameData) MarshalJSON() ([]byte, error) {
+	switch value := v.Value.(type) {
+	case GameDataJeopardy:
+		return json.Marshal(struct {
+			T string `json:"game"`
+			GameDataJeopardy
+		}{"jeopardy", value})
+	case GameDataKahoot:
+		return json.Marshal(struct {
+			T string `json:"game"`
+			GameDataKahoot
+		}{"kahoot", value})
+	default:
+		panic("unreachable")
 	}
-
-	return nil, fmt.Errorf("bad Game value: %s", v.Game)
 }
 
-func (v *Game) UnmarshalJSON(b []byte) error {
-	var t struct { T string `json:"game"` }
+func (v *GameData) UnmarshalJSON(b []byte) error {
+	var t struct {
+		T string `json:"game"`
+	}
 	if err := json.Unmarshal(b, &t); err != nil {
 		return err
 	}
 
+	var value valueGameData
 	var err error
+
 	switch t.T {
 	case "jeopardy":
-		err = json.Unmarshal(b, &v.Jeopardy)
+		var v GameDataJeopardy
+		err = json.Unmarshal(b, &v)
+		value = v
 	case "kahoot":
-		err = json.Unmarshal(b, &v.Kahoot)
+		var v GameDataKahoot
+		err = json.Unmarshal(b, &v)
+		value = v
 	default:
 		err = fmt.Errorf("bad Game value: %s", t.T)
 	}
@@ -342,54 +392,60 @@ func (v *Game) UnmarshalJSON(b []byte) error {
 		return err
 	}
 
-	v.Game = t.T
+	v.t = t.T
+	v.Value = value
 	return nil
 }
 
-type GameJeopardy struct {
-	Data Jeopardy `json:"data"`
+type valueGameData interface {
+	isGameData()
 }
 
-type GameKahoot struct {
-	Data Kahoot `json:"data"`
+func (GameDataJeopardy) isGameData() {}
+func (GameDataKahoot) isGameData()   {}
+
+type GameDataJeopardy struct {
+	Data JeopardyGameData `json:"data"`
 }
 
-// JeopardyGame is the game data for a Jeopardy game.
-type Jeopardy struct {
-	Categories []JeopardyCategory `json:"categories"`
-
-	// moderators enables moderators being able to join.
-	Moderators *bool `json:"moderators,omitempty"`
-
-	// require_name, if true, will require members to input a name before
-	// we can participate.
-	RequireName *bool `json:"require_name,omitempty"`
-
-	// score_multiplier is the score multiplier for each question. The
-	// default is 100.
-	ScoreMultiplier *float64 `json:"score_multiplier,omitempty"`
+type GameDataKahoot struct {
+	Data KahootGameData `json:"data"`
 }
+
+// GameID is the unique identifier for a game. Each player must type this
+// code to join the game.
+type GameID = string
+
+type GameType string
+
+const (
+	GameTypeJeopardy GameType = "jeopardy"
+	GameTypeKahoot   GameType = "kahoot"
+)
 
 // JeopardyCategory is a category in a Jeopardy game.
 type JeopardyCategory struct {
 	// name is the name of the category.
 	Name string `json:"name"`
-
 	// questions are the questions in the category.
 	Questions []JeopardyQuestion `json:"questions"`
+}
+
+// JeopardyGameData is the game data for a Jeopardy game.
+type JeopardyGameData struct {
+	Categories []JeopardyCategory `json:"categories"`
+	// score_multiplier is the score multiplier for each question. The
+	// default is 100.
+	ScoreMultiplier *float64 `json:"score_multiplier,omitempty"`
 }
 
 // JeopardyGameInfo is the initial information for a Jeopardy game. This type
 // contains no useful information about the entire game data, so it's used to
 // send to players the first time they join.
 type JeopardyGameInfo struct {
-	Categories []string `json:"categories"`
-
-	NumQuestions int32 `json:"numQuestions"`
-
-	Players []PlayerName `json:"players"`
-
-	ScoreMultiplier int32 `json:"scoreMultiplier"`
+	Categories      []string `json:"categories"`
+	NumQuestions    int32    `json:"numQuestions"`
+	ScoreMultiplier float64  `json:"scoreMultiplier"`
 }
 
 // JeopardyQuestion is a question in a Jeopardy game.
@@ -398,11 +454,10 @@ type JeopardyQuestion struct {
 	Question string `json:"question"`
 }
 
-// KahootGame is the game data for a Kahoot game.
-type Kahoot struct {
+// KahootGameData is the game data for a Kahoot game.
+type KahootGameData struct {
 	// questions are the questions in the game.
 	Questions []KahootQuestion `json:"questions"`
-
 	// time_limit is the time limit for each question. The format is in
 	// Go's time.Duration, e.g. 10s for 10 seconds.
 	TimeLimit string `json:"time_limit"`
@@ -412,7 +467,6 @@ type Kahoot struct {
 type KahootQuestion struct {
 	// answers are the possible answers.
 	Answers []string `json:"answers"`
-
 	// question is the question.
 	Question string `json:"question"`
 }
@@ -422,8 +476,7 @@ type Leaderboard = []LeaderboardEntry
 
 type LeaderboardEntry struct {
 	PlayerName string `json:"playerName"`
-
-	Score int32 `json:"score"`
+	Score      int32  `json:"score"`
 }
 
 // PlayerName is the name of a player.

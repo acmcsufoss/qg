@@ -14,17 +14,17 @@ local events = std.filter(
   std.objectFields(types),
 );
 
-types {
-  Event: schema.typeUnion(dxsonnet.obj.map(
+{
+  Event: schema.discriminator('type', dxsonnet.obj.map(
     function(k, v)
       if std.startsWith(k, 'Event')
-      then { [stdx.trimPrefix(k, 'Event')]: k },
+      then { [stdx.trimPrefix(k, 'Event')]: v },
     types,
   )),
-  Command: schema.typeUnion(dxsonnet.obj.map(
+  Command: schema.discriminator('type', dxsonnet.obj.map(
     function(k, v)
       if std.startsWith(k, 'Command')
-      then { [stdx.trimPrefix(k, 'Command')]: k },
+      then { [stdx.trimPrefix(k, 'Command')]: v },
     types,
   )),
 }
