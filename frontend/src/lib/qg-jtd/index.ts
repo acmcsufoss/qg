@@ -2,11 +2,19 @@
 
 export type Qg = any;
 
-export type Command = CommandJeopardyChooseQuestion0 | CommandJoinGame0;
+export type Command =
+  | CommandJeopardyPlayerIsCorrect0
+  | CommandJeopardyPressButton0
+  | CommandJoinGame0;
 
-export interface CommandJeopardyChooseQuestion0 {
-  type: "JeopardyChooseQuestion";
-  data: CommandJeopardyChooseQuestion;
+export interface CommandJeopardyPlayerIsCorrect0 {
+  type: "JeopardyPlayerIsCorrect";
+  data: CommandJeopardyPlayerIsCorrect;
+}
+
+export interface CommandJeopardyPressButton0 {
+  type: "JeopardyPressButton";
+  data: CommandJeopardyPressButton;
 }
 
 export interface CommandJoinGame0 {
@@ -15,14 +23,20 @@ export interface CommandJoinGame0 {
 }
 
 /**
- * CommandJeopardyChooseQuestion is emitted when a player chooses a question
- * to answer. The server must do validation to ensure that the player is
- * allowed to choose the question.
+ * CommandJeopardyPlayerIsCorrect is emitted by a game moderator to indicate
+ * that a player has answered a question correctly. The winning player is
+ * whoever the last EventJeopardyButtonPressed event indicated. That player
+ * will instantly receive the points for the question, and the game will let
+ * them choose the next category and question.
  */
-export interface CommandJeopardyChooseQuestion {
-  category: string;
-  question: string;
-}
+export type CommandJeopardyPlayerIsCorrect = any;
+
+/**
+ * CommandJeopardyPressButton is emitted when a player presses the button
+ * during a question. It is only valid to emit this command when the game is
+ * in the question state.
+ */
+export type CommandJeopardyPressButton = any;
 
 /**
  * CommandJoinGame is sent by a client to join a game. The client (or the
@@ -54,6 +68,8 @@ export interface Error {
 export type Event =
   | EventGameEnded0
   | EventJeopardyBeginQuestion0
+  | EventJeopardyButtonPressed0
+  | EventJeopardyResumeButton0
   | EventJeopardyTurnEnded0
   | EventJoinedGame0
   | EventPlayerJoined0;
@@ -66,6 +82,16 @@ export interface EventGameEnded0 {
 export interface EventJeopardyBeginQuestion0 {
   type: "JeopardyBeginQuestion";
   data: EventJeopardyBeginQuestion;
+}
+
+export interface EventJeopardyButtonPressed0 {
+  type: "JeopardyButtonPressed";
+  data: EventJeopardyButtonPressed;
+}
+
+export interface EventJeopardyResumeButton0 {
+  type: "JeopardyResumeButton";
+  data: EventJeopardyResumeButton;
 }
 
 export interface EventJeopardyTurnEnded0 {
@@ -102,6 +128,28 @@ export interface EventGameEnded {
 export interface EventJeopardyBeginQuestion {
   category: string;
   question: string;
+}
+
+/**
+ * EventJeopardyButtonPressed is emitted when any player had pressed a button
+ * on their device, voiding other players' buttons. This event is only
+ * emitted when the game is in the "question" state.
+ */
+export interface EventJeopardyButtonPressed {
+  playerName: PlayerName;
+}
+
+/**
+ * EventJeopardyResumeButton is emitted when the player can now continue to
+ * press the button whenever they are ready to answer the question. This
+ * could happen if the other player who pressed the button first got the
+ * question wrong.
+ *
+ * Note that if alreadyPressed is true, then the player has already pressed
+ * the button, so they cannot press it again.
+ */
+export interface EventJeopardyResumeButton {
+  alreadyPressed: boolean;
 }
 
 /**

@@ -12,15 +12,19 @@ type Qg = interface{}
 type Command struct {
 	Type string
 
-	JeopardyChooseQuestion CommandJeopardyChooseQuestion0
+	JeopardyPlayerIsCorrect CommandJeopardyPlayerIsCorrect0
+
+	JeopardyPressButton CommandJeopardyPressButton0
 
 	JoinGame CommandJoinGame0
 }
 
 func (v Command) MarshalJSON() ([]byte, error) {
 	switch v.Type {
-	case "JeopardyChooseQuestion":
-		return json.Marshal(struct { T string `json:"type"`; CommandJeopardyChooseQuestion0 }{ v.Type, v.JeopardyChooseQuestion })
+	case "JeopardyPlayerIsCorrect":
+		return json.Marshal(struct { T string `json:"type"`; CommandJeopardyPlayerIsCorrect0 }{ v.Type, v.JeopardyPlayerIsCorrect })
+	case "JeopardyPressButton":
+		return json.Marshal(struct { T string `json:"type"`; CommandJeopardyPressButton0 }{ v.Type, v.JeopardyPressButton })
 	case "JoinGame":
 		return json.Marshal(struct { T string `json:"type"`; CommandJoinGame0 }{ v.Type, v.JoinGame })
 	}
@@ -36,8 +40,10 @@ func (v *Command) UnmarshalJSON(b []byte) error {
 
 	var err error
 	switch t.T {
-	case "JeopardyChooseQuestion":
-		err = json.Unmarshal(b, &v.JeopardyChooseQuestion)
+	case "JeopardyPlayerIsCorrect":
+		err = json.Unmarshal(b, &v.JeopardyPlayerIsCorrect)
+	case "JeopardyPressButton":
+		err = json.Unmarshal(b, &v.JeopardyPressButton)
 	case "JoinGame":
 		err = json.Unmarshal(b, &v.JoinGame)
 	default:
@@ -52,22 +58,29 @@ func (v *Command) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-type CommandJeopardyChooseQuestion0 struct {
-	Data CommandJeopardyChooseQuestion `json:"data"`
+type CommandJeopardyPlayerIsCorrect0 struct {
+	Data CommandJeopardyPlayerIsCorrect `json:"data"`
+}
+
+type CommandJeopardyPressButton0 struct {
+	Data CommandJeopardyPressButton `json:"data"`
 }
 
 type CommandJoinGame0 struct {
 	Data CommandJoinGame `json:"data"`
 }
 
-// CommandJeopardyChooseQuestion is emitted when a player chooses a question
-// to answer. The server must do validation to ensure that the player is
-// allowed to choose the question.
-type CommandJeopardyChooseQuestion struct {
-	Category string `json:"category"`
+// CommandJeopardyPlayerIsCorrect is emitted by a game moderator to indicate
+// that a player has answered a question correctly. The winning player is
+// whoever the last EventJeopardyButtonPressed event indicated. That player
+// will instantly receive the points for the question, and the game will let
+// them choose the next category and question.
+type CommandJeopardyPlayerIsCorrect = interface{}
 
-	Question string `json:"question"`
-}
+// CommandJeopardyPressButton is emitted when a player presses the button
+// during a question. It is only valid to emit this command when the game is
+// in the question state.
+type CommandJeopardyPressButton = interface{}
 
 // CommandJoinGame is sent by a client to join a game. The client (or the
 // user) supplies a game ID and a player name. The server will respond with
@@ -93,6 +106,10 @@ type Event struct {
 
 	JeopardyBeginQuestion EventJeopardyBeginQuestion0
 
+	JeopardyButtonPressed EventJeopardyButtonPressed0
+
+	JeopardyResumeButton EventJeopardyResumeButton0
+
 	JeopardyTurnEnded EventJeopardyTurnEnded0
 
 	JoinedGame EventJoinedGame0
@@ -106,6 +123,10 @@ func (v Event) MarshalJSON() ([]byte, error) {
 		return json.Marshal(struct { T string `json:"type"`; EventGameEnded0 }{ v.Type, v.GameEnded })
 	case "JeopardyBeginQuestion":
 		return json.Marshal(struct { T string `json:"type"`; EventJeopardyBeginQuestion0 }{ v.Type, v.JeopardyBeginQuestion })
+	case "JeopardyButtonPressed":
+		return json.Marshal(struct { T string `json:"type"`; EventJeopardyButtonPressed0 }{ v.Type, v.JeopardyButtonPressed })
+	case "JeopardyResumeButton":
+		return json.Marshal(struct { T string `json:"type"`; EventJeopardyResumeButton0 }{ v.Type, v.JeopardyResumeButton })
 	case "JeopardyTurnEnded":
 		return json.Marshal(struct { T string `json:"type"`; EventJeopardyTurnEnded0 }{ v.Type, v.JeopardyTurnEnded })
 	case "JoinedGame":
@@ -129,6 +150,10 @@ func (v *Event) UnmarshalJSON(b []byte) error {
 		err = json.Unmarshal(b, &v.GameEnded)
 	case "JeopardyBeginQuestion":
 		err = json.Unmarshal(b, &v.JeopardyBeginQuestion)
+	case "JeopardyButtonPressed":
+		err = json.Unmarshal(b, &v.JeopardyButtonPressed)
+	case "JeopardyResumeButton":
+		err = json.Unmarshal(b, &v.JeopardyResumeButton)
 	case "JeopardyTurnEnded":
 		err = json.Unmarshal(b, &v.JeopardyTurnEnded)
 	case "JoinedGame":
@@ -153,6 +178,14 @@ type EventGameEnded0 struct {
 
 type EventJeopardyBeginQuestion0 struct {
 	Data EventJeopardyBeginQuestion `json:"data"`
+}
+
+type EventJeopardyButtonPressed0 struct {
+	Data EventJeopardyButtonPressed `json:"data"`
+}
+
+type EventJeopardyResumeButton0 struct {
+	Data EventJeopardyResumeButton `json:"data"`
 }
 
 type EventJeopardyTurnEnded0 struct {
@@ -183,6 +216,24 @@ type EventJeopardyBeginQuestion struct {
 	Category string `json:"category"`
 
 	Question string `json:"question"`
+}
+
+// EventJeopardyButtonPressed is emitted when any player had pressed a button
+// on their device, voiding other players' buttons. This event is only
+// emitted when the game is in the "question" state.
+type EventJeopardyButtonPressed struct {
+	PlayerName PlayerName `json:"playerName"`
+}
+
+// EventJeopardyResumeButton is emitted when the player can now continue to
+// press the button whenever they are ready to answer the question. This
+// could happen if the other player who pressed the button first got the
+// question wrong.
+// 
+// Note that if alreadyPressed is true, then the player has already pressed
+// the button, so they cannot press it again.
+type EventJeopardyResumeButton struct {
+	AlreadyPressed bool `json:"alreadyPressed"`
 }
 
 // EventJeopardyTurnEnded is emitted when a turn ends or when the game first
