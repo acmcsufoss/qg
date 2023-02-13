@@ -57,6 +57,13 @@ local schema = import '../lib/schema.jsonnet';
     })
   ),
 
+  CommandBeginGame: schema.description(
+    |||
+      CommandBeginGame is sent by a client to begin a game.
+    |||,
+    schema.empty
+  ),
+
   CommandEndGame: schema.description(
     |||
       CommandEndGame is sent by a client to end the current game. The server

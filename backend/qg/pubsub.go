@@ -8,7 +8,7 @@ func TopicEventForGamePlayer(id GameID, player PlayerName) SubscribableTopic[Eve
 	return SubscribableTopic[Event]{"qg", "event", id, "player", player}
 }
 
-func topicEventForGame(id GameID) SubscribableTopic[Event] {
+func TopicEventForGame(id GameID) SubscribableTopic[Event] {
 	return SubscribableTopic[Event]{"qg", "event", id}
 }
 

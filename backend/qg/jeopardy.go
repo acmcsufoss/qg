@@ -29,25 +29,6 @@ func ValidateJeopardyGameData(data *JeopardyGameData) error {
 	return nil
 }
 
-// JeopardyGameStorer is a stateful store for Jeopardy games.
-type JeopardyGameStorer interface {
-	// Data gets the full Jeopardy game info for the given game ID.
-	// Only game moderators should be allowed to use this.
-	Data(context.Context, GameID) (*JeopardyGameData, error)
-	// AddPlayer adds the given player to the game. If the player already exists,
-	// this is a no-op.
-	AddPlayer(context.Context, GameID, PlayerName) error
-	// Players gets the players in the game.
-	Players(context.Context, GameID) ([]PlayerName, error)
-	// MarkQuestionAsAnswered marks the given question as answered by the given
-	// player and the index of the category and question within the game data.
-	MarkQuestionAsAnswered(context.Context, GameID, int, int) error
-	// AnsweredQuestions returns a matrix of the answered questions for the
-	// given game. The first dimension is the category index, and the second
-	// dimension is the question index.
-	AnsweredQuestions(context.Context, GameID) ([][]bool, error)
-}
-
 // JeopardyGameManager is a game manager for Jeopardy games.
 type JeopardyGameManager struct {
 	gamesMu sync.RWMutex
@@ -106,13 +87,8 @@ func (m *JeopardyGameManager) AddGame(ctx context.Context, id GameID) (*ManagedJ
 
 // ManagedJeopardyGame is a managed Jeopardy game.
 type ManagedJeopardyGame struct {
-	// TODO: refactor this into a state machine.
-
-	mutex   sync.Mutex
-	players map[PlayerName]*ManagedJeopardyGamePlayer
-
-	currentQuestion int
-	currentCategory int
+	playersMu sync.RWMutex
+	players   map[PlayerName]*ManagedJeopardyGamePlayer
 
 	id     GameID
 	data   JeopardyGameData
@@ -148,31 +124,12 @@ func (g *ManagedJeopardyGame) AddPlayer(ctx context.Context, name PlayerName) (*
 	}
 	g.mutex.Unlock()
 
-	if err := topicEventForGame(g.id).Broadcast(ctx, g.pubsub, Event{
+	if err := TopicEventForGame(g.id).Broadcast(ctx, g.pubsub, Event{
 		Value: EventPlayerJoined{
 			PlayerName: name,
 		},
 	}); err != nil {
 		return player, errors.Wrap(err, "failed to broadcast player joined event")
-	}
-
-	players, err := g.store.Players(ctx, g.id)
-	if err != nil {
-		return player, errors.Wrap(err, "failed to get players")
-	}
-
-	playerTopic := TopicEventForGamePlayer(g.id, name)
-	for _, p := range players {
-		if p == name {
-			continue
-		}
-		if err := playerTopic.Broadcast(ctx, g.pubsub, Event{
-			Value: EventPlayerJoined{
-				PlayerName: p,
-			},
-		}); err != nil {
-			return player, errors.Wrap(err, "failed to broadcast player joined event")
-		}
 	}
 
 	return player, nil
@@ -181,23 +138,12 @@ func (g *ManagedJeopardyGame) AddPlayer(ctx context.Context, name PlayerName) (*
 // Begin begins the game.
 func (g *ManagedJeopardyGame) Begin(ctx context.Context) error {
 	g.mutex.Lock()
-	for _, player := range g.players {
-		player.newTurn()
-	}
-
-	// Pick a random player to start.
-	var startingPlayer PlayerName
-	for name, player := range g.players {
-		startingPlayer = name
-		player.choosingQuestion = true
-		break
-	}
 
 	g.currentCategory = -1
 	g.currentQuestion = -1
 	g.mutex.Unlock()
 
-	if err := topicEventForGame(g.id).Broadcast(ctx, g.pubsub, Event{
+	if err := TopicEventForGame(g.id).Broadcast(ctx, g.pubsub, Event{
 		Value: EventJeopardyTurnEnded{
 			Chooser: startingPlayer,
 		},
@@ -234,7 +180,7 @@ func (g *ManagedJeopardyGame) PlayerJudgment(ctx context.Context, correct bool) 
 		ev.Value = EventJeopardyResumeButton{}
 	}
 
-	if err := topicEventForGame(g.id).Broadcast(ctx, g.pubsub, Event{
+	if err := TopicEventForGame(g.id).Broadcast(ctx, g.pubsub, Event{
 		Value: EventJeopardyAnswered{
 			Answerer: answering,
 			Correct:  correct,
@@ -283,7 +229,7 @@ func (g *ManagedJeopardyGamePlayer) ChooseQuestion(ctx context.Context, category
 		return errors.Wrap(err, "failed to mark question as answered")
 	}
 
-	if err := topicEventForGame(g.game.id).Broadcast(ctx, g.game.pubsub, Event{
+	if err := TopicEventForGame(g.game.id).Broadcast(ctx, g.game.pubsub, Event{
 		Value: EventJeopardyBeginQuestion{
 			Chooser:  g.name,
 			Points:   g.game.data.QuestionPoints(questionIx),
@@ -314,7 +260,7 @@ func (g *ManagedJeopardyGamePlayer) PressButton(ctx context.Context) error {
 	g.game.answering = true
 	g.game.mutex.Unlock()
 
-	if err := topicEventForGame(g.game.id).Broadcast(ctx, g.game.pubsub, Event{
+	if err := TopicEventForGame(g.game.id).Broadcast(ctx, g.game.pubsub, Event{
 		Value: EventJeopardyButtonPressed{
 			PlayerName: g.name,
 		},

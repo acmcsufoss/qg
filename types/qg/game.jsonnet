@@ -39,6 +39,6 @@ local schema = import '../lib/schema.jsonnet';
 
   LeaderboardEntry: schema.properties({
     playerName: schema.string,
-    score: schema.int,
+    score: schema.float,
   }),
 }

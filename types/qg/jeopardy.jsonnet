@@ -7,6 +7,7 @@ local schema = import '../lib/schema.jsonnet';
     schema.properties(
       {
         categories: schema.arrayOf(schema.ref('JeopardyCategory')),
+        moderator_password: schema.string,
       },
       optionalProperties={
         score_multiplier: schema.description(

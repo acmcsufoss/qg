@@ -17,7 +17,7 @@ local stdx = import 'stdx.jsonnet';
   uint32: { type: 'uint32' },
   integer: $.int32,
   int: $.integer,
-  float: $.float64,
+  float: $.float32,
   number: $.float,
   enum: function(values) { enum: values },
   arrayOf: $.elements,

@@ -23,8 +23,8 @@ local schema = import '../lib/schema.jsonnet';
     |||,
     schema.properties({
       chooser: schema.ref('PlayerName'),
-      category: schema.string,
-      question: schema.string,
+      category: schema.int32,
+      question: schema.int32,
       points: schema.float,
     }),
   ),
@@ -51,7 +51,7 @@ local schema = import '../lib/schema.jsonnet';
       the button, so they cannot press it again.
     |||,
     schema.properties({
-      alreadyPressed: schema.boolean,
+      alreadyAnsweredPlayers: schema.arrayOf(schema.ref('PlayerName')),
     }),
   ),
 

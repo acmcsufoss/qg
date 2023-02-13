@@ -5,6 +5,13 @@ export default {
     Command: {
       discriminator: "type",
       mapping: {
+        BeginGame: {
+          metadata: {
+            description:
+              "CommandBeginGame is sent by a client to begin a game.\n",
+          },
+          properties: {},
+        },
         EndGame: {
           metadata: {
             description:
@@ -116,16 +123,16 @@ export default {
           },
           properties: {
             category: {
-              type: "string",
+              type: "int32",
             },
             chooser: {
               ref: "PlayerName",
             },
             points: {
-              type: "float64",
+              type: "float32",
             },
             question: {
-              type: "string",
+              type: "int32",
             },
           },
         },
@@ -146,8 +153,10 @@ export default {
               "EventJeopardyResumeButton is emitted when the player can now continue to\npress the button whenever they are ready to answer the question. This\ncould happen if the other player who pressed the button first got the\nquestion wrong.\n\nNote that if alreadyPressed is true, then the player has already pressed\nthe button, so they cannot press it again.\n",
           },
           properties: {
-            alreadyPressed: {
-              type: "boolean",
+            alreadyAnsweredPlayers: {
+              elements: {
+                ref: "PlayerName",
+              },
             },
           },
         },
@@ -249,7 +258,7 @@ export default {
             description:
               "score_multiplier is the score multiplier for each question. The\ndefault is 100.\n",
           },
-          type: "float64",
+          type: "float32",
         },
       },
       properties: {
@@ -257,6 +266,9 @@ export default {
           elements: {
             ref: "JeopardyCategory",
           },
+        },
+        moderator_password: {
+          type: "string",
         },
       },
     },
@@ -275,7 +287,7 @@ export default {
           type: "int32",
         },
         scoreMultiplier: {
-          type: "float64",
+          type: "float32",
         },
       },
     },
@@ -349,7 +361,7 @@ export default {
           type: "string",
         },
         score: {
-          type: "int32",
+          type: "float32",
         },
       },
     },

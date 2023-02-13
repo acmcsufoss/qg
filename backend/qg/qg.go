@@ -11,6 +11,7 @@ type Qg = interface{}
 
 type Command struct {
 	// Value can be the following types:
+	//  - [CommandBeginGame] (BeginGame)
 	//  - [CommandEndGame] (EndGame)
 	//  - [CommandJeopardyChooseQuestion] (JeopardyChooseQuestion)
 	//  - [CommandJeopardyPlayerJudgment] (JeopardyPlayerJudgment)
@@ -23,6 +24,11 @@ type Command struct {
 
 func (v Command) MarshalJSON() ([]byte, error) {
 	switch value := v.Value.(type) {
+	case CommandBeginGame:
+		return json.Marshal(struct {
+			T string `json:"type"`
+			CommandBeginGame
+		}{"BeginGame", value})
 	case CommandEndGame:
 		return json.Marshal(struct {
 			T string `json:"type"`
@@ -65,6 +71,10 @@ func (v *Command) UnmarshalJSON(b []byte) error {
 	var err error
 
 	switch t.T {
+	case "BeginGame":
+		var v CommandBeginGame
+		err = json.Unmarshal(b, &v)
+		value = v
 	case "EndGame":
 		var v CommandEndGame
 		err = json.Unmarshal(b, &v)
@@ -102,11 +112,16 @@ type valueCommand interface {
 	isCommand()
 }
 
+func (CommandBeginGame) isCommand()              {}
 func (CommandEndGame) isCommand()                {}
 func (CommandJeopardyChooseQuestion) isCommand() {}
 func (CommandJeopardyPlayerJudgment) isCommand() {}
 func (CommandJeopardyPressButton) isCommand()    {}
 func (CommandJoinGame) isCommand()               {}
+
+// CommandBeginGame is sent by a client to begin a game.
+type CommandBeginGame struct {
+}
 
 // CommandEndGame is sent by a client to end the current game. The server
 // will respond with an EventGameEnded. Only game moderators (including the
@@ -294,10 +309,10 @@ type EventGameEnded struct {
 // within the game data. Note that a question may repeat across multiple
 // categories.
 type EventJeopardyBeginQuestion struct {
-	Category string     `json:"category"`
+	Category int32      `json:"category"`
 	Chooser  PlayerName `json:"chooser"`
-	Points   float64    `json:"points"`
-	Question string     `json:"question"`
+	Points   float32    `json:"points"`
+	Question int32      `json:"question"`
 }
 
 // EventJeopardyButtonPressed is emitted when any player had pressed a button
@@ -315,7 +330,7 @@ type EventJeopardyButtonPressed struct {
 // Note that if alreadyPressed is true, then the player has already pressed
 // the button, so they cannot press it again.
 type EventJeopardyResumeButton struct {
-	AlreadyPressed bool `json:"alreadyPressed"`
+	AlreadyAnsweredPlayers []PlayerName `json:"alreadyAnsweredPlayers"`
 }
 
 // EventJeopardyTurnEnded is emitted when a turn ends or when the game first
@@ -433,10 +448,11 @@ type JeopardyCategory struct {
 
 // JeopardyGameData is the game data for a Jeopardy game.
 type JeopardyGameData struct {
-	Categories []JeopardyCategory `json:"categories"`
+	Categories        []JeopardyCategory `json:"categories"`
+	ModeratorPassword string             `json:"moderator_password"`
 	// score_multiplier is the score multiplier for each question. The
 	// default is 100.
-	ScoreMultiplier *float64 `json:"score_multiplier,omitempty"`
+	ScoreMultiplier *float32 `json:"score_multiplier,omitempty"`
 }
 
 // JeopardyGameInfo is the initial information for a Jeopardy game. This type
@@ -445,7 +461,7 @@ type JeopardyGameData struct {
 type JeopardyGameInfo struct {
 	Categories      []string `json:"categories"`
 	NumQuestions    int32    `json:"numQuestions"`
-	ScoreMultiplier float64  `json:"scoreMultiplier"`
+	ScoreMultiplier float32  `json:"scoreMultiplier"`
 }
 
 // JeopardyQuestion is a question in a Jeopardy game.
@@ -475,8 +491,8 @@ type KahootQuestion struct {
 type Leaderboard = []LeaderboardEntry
 
 type LeaderboardEntry struct {
-	PlayerName string `json:"playerName"`
-	Score      int32  `json:"score"`
+	PlayerName string  `json:"playerName"`
+	Score      float32 `json:"score"`
 }
 
 // PlayerName is the name of a player.

@@ -3,11 +3,19 @@
 export type Qg = any;
 
 export type Command =
+  | CommandBeginGame
   | CommandEndGame
   | CommandJeopardyChooseQuestion
   | CommandJeopardyPlayerJudgment
   | CommandJeopardyPressButton
   | CommandJoinGame;
+
+/**
+ * CommandBeginGame is sent by a client to begin a game.
+ */
+export interface CommandBeginGame {
+  type: "BeginGame";
+}
 
 /**
  * CommandEndGame is sent by a client to end the current game. The server
@@ -120,10 +128,10 @@ export interface EventGameEnded {
  */
 export interface EventJeopardyBeginQuestion {
   type: "JeopardyBeginQuestion";
-  category: string;
+  category: number;
   chooser: PlayerName;
   points: number;
-  question: string;
+  question: number;
 }
 
 /**
@@ -147,7 +155,7 @@ export interface EventJeopardyButtonPressed {
  */
 export interface EventJeopardyResumeButton {
   type: "JeopardyResumeButton";
-  alreadyPressed: boolean;
+  alreadyAnsweredPlayers: PlayerName[];
 }
 
 /**
@@ -224,6 +232,7 @@ export interface JeopardyCategory {
  */
 export interface JeopardyGameData {
   categories: JeopardyCategory[];
+  moderator_password: string;
 
   /**
    * score_multiplier is the score multiplier for each question. The
