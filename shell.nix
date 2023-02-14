@@ -19,7 +19,9 @@ let overlay = self: super:
 
 in { pkgs ? import <nixpkgs> { overlays = [ overlay ]; } }:
 
-let fetchPatchFromGitHub = { owner, repo, rev, sha256 }:
+let lib = pkgs.lib;
+
+	fetchPatchFromGitHub = { owner, repo, rev, sha256 }:
 		pkgs.fetchpatch {
 			url = "https://github.com/${owner}/${repo}/commit/${rev}.patch";
 			inherit sha256;
@@ -81,15 +83,15 @@ let fetchPatchFromGitHub = { owner, repo, rev, sha256 }:
 		vendorSha256 = "0gjj1zn29vyx704y91g77zrs770y2rakksnn9dhg8r6na94njh5a";
 	};
 	
-	jtd-codegen = pkgs.rustPlatform.buildRustPackage {
-		pname = "jtd-codegen";
-		version = "dev";
+	jtd-codegen = pkgs.rustPlatform.buildRustPackage rec {
+		pname = "jtd-codegen-patched";
+		version = "0.4.1";
 
 		# TODO: push the PR and replace this.
 		src = pkgs.fetchFromGitHub {
 			owner  = "jsontypedef";
 			repo   = "json-typedef-codegen";
-			rev    = "v0.4.1";
+			rev    = "v${version}";
 			sha256 = "1922k67diwrbcm6rq18pzr9627xzkv00k3y2dc4843hn25kqqha5";
 		};
 
@@ -108,8 +110,7 @@ let fetchPatchFromGitHub = { owner, repo, rev, sha256 }:
 			})
 		];
 
-		cargoHash = "sha256:1hax2whf0kfb2sw2a6rams2c46qk3360wkdxp0rgwfyjsxz5znk3";
-
+		cargoHash = "sha256:0awsvzszca60mw7l48w23fmjll092gk7px77k4f88lxxdy63c1jp";
 		# These tests need Docker for some stupid reason.
 		doCheck = false;
 	};
