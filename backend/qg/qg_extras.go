@@ -75,9 +75,8 @@ func ValidatePlayerName(name string) error {
 	return nil
 }
 
-// ValidateJeopardyGameData performs additional validation on the given Jeopardy
-// game data. The function will make changes to the data.
-func ValidateJeopardyGameData(data *JeopardyGameData) error {
+// Validate validates the given game data.
+func (data *JeopardyGameData) Validate() error {
 	if len(data.Categories) == 0 {
 		return fmt.Errorf("no categories found, must have at least one")
 	}

@@ -3,6 +3,7 @@ package qg
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	_ "embed"
 
@@ -30,6 +31,21 @@ func init() {
 
 // func
 
+// TypeValidationError is an error that occurs when a value does not
+// match the expected type definition.
+type TypeValidationError jtd.ValidateError
+
+func (err TypeValidationError) Error() string {
+	path := "$"
+	if len(err.InstancePath) > 0 {
+		path += "." + strings.Join(err.InstancePath, ".")
+	}
+
+	return fmt.Sprintf(
+		"error at %s (%s)",
+		path, strings.Join(err.SchemaPath, "."))
+}
+
 // Validate validates the given value against the qg schema.
 func Validate(name string, v any) error {
 	vschema, ok := Schema.Definitions[name]
@@ -49,5 +65,5 @@ func Validate(name string, v any) error {
 		return nil
 	}
 
-	return fmt.Errorf("error at %s", errors[0].InstancePath)
+	return TypeValidationError(errors[0])
 }

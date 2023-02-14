@@ -8,6 +8,9 @@ import (
 	"os"
 	"os/signal"
 
+	"etok.codes/qg/backend/qg"
+	"etok.codes/qg/backend/qg/games"
+	"etok.codes/qg/backend/qg/games/jeopardy"
 	"etok.codes/qg/backend/qg/stores/sqlite"
 	"etok.codes/qg/backend/server"
 	"github.com/diamondburned/listener"
@@ -35,7 +38,10 @@ func main() {
 	}
 	defer store.Close()
 
-	handler := server.NewHandler(store)
+	gameManager := games.NewManager(store)
+	gameManager.AddGame(qg.GameTypeJeopardy, jeopardy.New(store))
+
+	handler := server.NewHandler(store, gameManager)
 	defer handler.Close()
 
 	r := chi.NewRouter()

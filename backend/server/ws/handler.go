@@ -5,7 +5,6 @@ import (
 	"sync"
 
 	"etok.codes/qg/backend/qg"
-	"github.com/go-chi/chi/v5"
 	"github.com/gorilla/websocket"
 )
 
@@ -20,15 +19,16 @@ type Handler struct {
 	// to websocket connections.
 	Upgrader websocket.Upgrader
 
-	r    chi.Router
 	wg   sync.WaitGroup
 	srvs sync.Map
+	hfac qg.CommandHandlerFactory
 }
 
 // NewHandler creates a new websocket handler.
-func NewHandler() *Handler {
+func NewHandler(hfac qg.CommandHandlerFactory) *Handler {
 	return &Handler{
-		r: chi.NewRouter(),
+		Upgrader: DefaultUpgrader,
+		hfac:     hfac,
 	}
 }
 
@@ -43,15 +43,8 @@ func (h *Handler) Stop() {
 	h.wg.Wait()
 }
 
-// Mount mounts a new command handler on the given path.
-func (h *Handler) Mount(route string, hfac qg.CommandHandlerFactory) {
-	h.r.Mount(route, serverHandler{
-		root: h,
-		hfac: hfac,
-	})
-}
-
 // ServeHTTP implements the http.Handler interface.
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	h.r.ServeHTTP(w, r)
+	srvh := serverHandler{root: h}
+	srvh.ServeHTTP(w, r)
 }

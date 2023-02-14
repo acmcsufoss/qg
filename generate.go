@@ -7,6 +7,7 @@ package main
 //go:generate gofmt -w ./backend/qg/qg.go
 //go:generate cp ./types/qg.json ./backend/qg/schema.json
 //go:generate go generate ./backend/qg/stores/sqlite
+//go:generate ./scripts/jtd-go-validators ./backend/qg/qg_validators.go
 
 //go:generate jtd-codegen ./types/qg.json --typescript-out ./frontend/src/lib/qg-jtd/
 //go:generate prettier -w ./frontend/src/lib/qg-jtd/index.ts

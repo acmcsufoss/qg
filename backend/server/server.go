@@ -7,6 +7,7 @@ import (
 
 	"etok.codes/qg/backend/internal/hrt"
 	"etok.codes/qg/backend/qg"
+	"etok.codes/qg/backend/qg/games"
 	"etok.codes/qg/backend/qg/games/jeopardy"
 	"etok.codes/qg/backend/server/ws"
 	"github.com/go-chi/chi/v5"
@@ -32,25 +33,25 @@ type HTTPHandlerCloser interface {
 }
 
 // NewHandler creates a new Handler.
-func NewHandler(storer Storer) HTTPHandlerCloser {
+func NewHandler(storer Storer, gm *games.Manager) HTTPHandlerCloser {
 	h := &handler{
 		Mux: chi.NewMux(),
-		ws:  ws.NewHandler(),
-		api: &apiHandler{},
+		ws:  ws.NewHandler(gm),
+		api: newAPIHandler(storer, gm),
 	}
 
 	h.Use(hrt.Use(hrt.Opts{
-		Encoder:     hrt.EncoderWithValidator(hrt.JSONEncoder),
+		Encoder:     hrt.EncoderWithValidator(hrt.DefaultEncoder),
 		ErrorWriter: hrt.WriteErrorFunc(writeError),
 	}))
 
 	h.Mount("/ws", h.ws)
 
 	h.Route("/game", func(r chi.Router) {
-		r.Get("/", hrt.Wrap(h.api.getGame))
+		r.Get("/{gameID}", hrt.Wrap(h.api.getGame))
 		r.Post("/", hrt.Wrap(h.api.postGame))
 
-		r.Get("/jeopardy", hrt.Wrap(h.api.getJeopardy))
+		r.Get("/jeopardy/{gameID}", hrt.Wrap(h.api.getJeopardy))
 	})
 
 	return h
@@ -66,7 +67,15 @@ func writeError(w http.ResponseWriter, err error) {
 }
 
 type apiHandler struct {
-	store Storer
+	store       Storer
+	gameManager *games.Manager
+}
+
+func newAPIHandler(store Storer, gm *games.Manager) *apiHandler {
+	return &apiHandler{
+		store:       store,
+		gameManager: gm,
+	}
 }
 
 func (h *apiHandler) getGame(ctx context.Context, body qg.RequestGetGame) (qg.ResponseGetGame, error) {
@@ -79,7 +88,7 @@ func (h *apiHandler) getGame(ctx context.Context, body qg.RequestGetGame) (qg.Re
 }
 
 func (h *apiHandler) postGame(ctx context.Context, body qg.RequestNewGame) (qg.ResponseNewGame, error) {
-	gameID, err := h.store.MakeNewGame(ctx, body.Data)
+	gameID, err := h.gameManager.CreateGame(ctx, body.Data)
 	if err != nil {
 		return qg.ResponseNewGame{}, err
 	}

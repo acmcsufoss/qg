@@ -4,9 +4,9 @@ import "context"
 
 // GameStorer is a store for games.
 type GameStorer interface {
-	// MakeNewGame creates a new game using the given game data. The new game ID
+	// CreateGame creates a new game using the given game data. The new game ID
 	// is returned.
-	MakeNewGame(context.Context, GameData) (GameID, error)
+	CreateGame(context.Context, GameData) (GameID, error)
 	// SetGamePassword sets the moderator password for the given game. Users
 	// that connect to the game with the given password will be considered
 	// moderators.

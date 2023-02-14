@@ -29,7 +29,7 @@ type Opts struct {
 
 // DefaultOpts is the default options for the router.
 var DefaultOpts = Opts{
-	Encoder:     JSONEncoder,
+	Encoder:     DefaultEncoder,
 	ErrorWriter: TextErrorWriter,
 }
 

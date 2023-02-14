@@ -5,13 +5,41 @@ import (
 	"net/http"
 )
 
+// DefaultEncoder is the default encoder used by the router. It decodes GET
+// requests using the query string and URL parameter; everything else uses JSON.
+var DefaultEncoder = CombinedEncoder{
+	Encoder: JSONEncoder,
+	Decoder: MethodDecoder{
+		// For the sake of being RESTful, we use a URLDecoder for GET requests.
+		"GET": URLDecoder,
+		// Everything else will be decoded as JSON.
+		"*": JSONEncoder,
+	},
+}
+
 // Encoder describes an encoder that encodes or decodes the request and response
 // types.
 type Encoder interface {
 	// Encode encodes the given value into the given writer.
 	Encode(http.ResponseWriter, any) error
-	// Decode decodes the given value from the given reader.
-	Decode(*http.Request, any) error
+	// An encoder must be able to decode the same type it encodes.
+	Decoder
+}
+
+// CombinedEncoder combines an encoder and decoder pair into one.
+type CombinedEncoder struct {
+	Encoder Encoder
+	Decoder Decoder
+}
+
+// Encode implements the Encoder interface.
+func (e CombinedEncoder) Encode(w http.ResponseWriter, v any) error {
+	return e.Encoder.Encode(w, v)
+}
+
+// Decode implements the Decoder interface.
+func (e CombinedEncoder) Decode(r *http.Request, v any) error {
+	return e.Decoder.Decode(r, v)
 }
 
 // JSONEncoder is an encoder that encodes and decodes JSON.

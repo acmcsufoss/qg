@@ -3,6 +3,7 @@ package ws
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 	"sync"
 	"time"
@@ -18,7 +19,6 @@ func newSendLimiter() *rate.Limiter {
 
 type serverHandler struct {
 	root *Handler
-	hfac qg.CommandHandlerFactory
 }
 
 func (h serverHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -31,20 +31,30 @@ func (h serverHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithCancelCause(r.Context())
 	defer cancel(nil)
 
+	defer func() {
+		if context.Cause(ctx) != nil {
+			log.Println("closing websocket:", context.Cause(ctx))
+		}
+	}()
+
 	ch := make(chan qg.Event, 16)
 
 	h.root.srvs.Store(ch, struct{}{})
 	defer h.root.srvs.Delete(ch)
 
-	cmdh := h.hfac.CommandHandler()
-	cmdh.Subscribe(ctx, ch)
-	defer cmdh.Unsubscribe(ctx, ch)
+	cmdh, err := h.root.hfac.NewCommandHandler(ctx, ch)
+	if err != nil {
+		qg.WriteHTTPError(w, http.StatusInternalServerError, err)
+		return
+	}
+	defer cmdh.Close()
 
 	var wg sync.WaitGroup
 	defer wg.Wait()
 
 	server := &server{
-		ws: conn,
+		ws:     conn,
+		cancel: cancel,
 	}
 
 	wg.Add(1)
@@ -88,7 +98,10 @@ func (s *server) commandLoop(ctx context.Context, cmdh qg.CommandHandler) {
 }
 
 func (s *server) eventLoop(ctx context.Context, ch <-chan qg.Event) {
-	defer s.cancel(s.ws.Close())
+	defer func() {
+		err := s.ws.Close()
+		s.cancel(err)
+	}()
 
 	const heartrate = 30 * time.Second
 
@@ -100,6 +113,7 @@ func (s *server) eventLoop(ctx context.Context, ch <-chan qg.Event) {
 		s.ws.SetReadDeadline(deadline)
 		s.ws.SetWriteDeadline(deadline)
 	}
+	resetDeadline()
 
 	s.ws.SetPongHandler(func(string) error {
 		resetDeadline()

@@ -24,36 +24,57 @@ type Storer interface {
 	JeopardyGameData(ctx context.Context, id qg.GameID) (qg.JeopardyGameData, error)
 }
 
-// GameManager manages a game of Jeopardy.
-type GameManager struct {
-	machine *cando.Machine
+// Game is in charge of creating and managing new Jeopardy games.
+type Game struct {
+	store Storer
+}
 
+// New creates a new Game instance.
+func New(store Storer) Game {
+	return Game{store}
+}
+
+// CreateGame implements the games.GameCreator.
+func (g Game) CreateGame(ctx context.Context, id qg.GameID, data qg.GameData) (qg.CommandHandlerFactory, error) {
+	jeopardyData, ok := data.Value.(qg.GameDataJeopardy)
+	if !ok {
+		return nil, errors.Errorf("invalid game data type: %T", data.Value)
+	}
+
+	managedData := managedGameData{
+		pubsub: pubsub.NewPublisher(),
+		storer: g.store,
+		data:   jeopardyData.Data,
+		id:     id,
+	}
+
+	machineData := newMachineData(managedData)
+	return &managedGame{
+		machine:         cando.NewMachine(machineData),
+		managedGameData: managedData,
+	}, nil
+}
+
+type managedGame struct {
+	machine *cando.Machine
+	managedGameData
+}
+
+type managedGameData struct {
+	pubsub *pubsub.Publisher
 	storer Storer
-	pubsub qg.Publisher
 	data   qg.JeopardyGameData
 	id     qg.GameID
 }
 
-// NewGame creates a new managed game of Jeopardy.
-func NewGame(id qg.GameID, data qg.JeopardyGameData, storer Storer) (*GameManager, error) {
-	pubsubber := pubsub.NewPublisher()
-	machineData := newMachineData(id, data, storer, pubsubber)
-	return &GameManager{
-		machine: cando.NewMachine(machineData),
-		storer:  storer,
-		pubsub:  pubsubber,
-		data:    data,
-		id:      id,
-	}, nil
-}
-
-// CommandHandler creates a new command handler for the given game.
-func (m *GameManager) CommandHandler() qg.CommandHandler {
-	return &playerHandler{m: m}
+func (m *managedGame) NewCommandHandler(ctx context.Context, evs chan<- qg.Event) (qg.CommandHandler, error) {
+	m.pubsub.Subscribe(ctx, evs)
+	return &playerHandler{m: m, evs: evs}, nil
 }
 
 type playerHandler struct {
-	m      *GameManager
+	evs    chan<- qg.Event
+	m      *managedGame
 	player *playerState
 }
 
@@ -63,13 +84,8 @@ func (m *playerHandler) HandleCommand(ctx context.Context, cmd qg.Command) error
 	return m.m.machine.Change(ctx, cmd)
 }
 
-func (m *playerHandler) Subscribe(ctx context.Context, out chan<- qg.Event) error {
-	m.m.pubsub.Subscribe(ctx, out)
-	return nil
-}
-
-func (m *playerHandler) Unsubscribe(ctx context.Context, out chan<- qg.Event) error {
-	m.m.pubsub.Unsubscribe(ctx, out)
+func (m *playerHandler) Close() error {
+	m.m.pubsub.Unsubscribe(context.Background(), m.evs)
 	return nil
 }
 
@@ -136,7 +152,7 @@ type playerState struct {
 	Name qg.PlayerName
 }
 
-func newMachineData(id qg.GameID, data qg.JeopardyGameData, storer Storer, pubsub qg.Publisher) cando.MachineData {
+func newMachineData(m managedGameData) cando.MachineData {
 	var mutex sync.Mutex
 	state := GameState{
 		Players:           make(map[qg.PlayerName]*PlayerState),
@@ -154,7 +170,7 @@ func newMachineData(id qg.GameID, data qg.JeopardyGameData, storer Storer, pubsu
 		}
 
 		// Check that we still have questions that aren't yet answered.
-		if len(state.AnsweredQuestions) < data.TotalQuestions() {
+		if len(state.AnsweredQuestions) < m.data.TotalQuestions() {
 			return cando.NextStates{
 				cando.Next[qg.CommandJeopardyChooseQuestion](),
 			}, nil
@@ -176,14 +192,14 @@ func newMachineData(id qg.GameID, data qg.JeopardyGameData, storer Storer, pubsu
 		},
 		Reactors: []cando.AnyReactor{
 			cando.Reactor(func(ctx context.Context, _ any, next cando.EndReaction) error {
-				return pubsub.Publish(ctx, qg.Event{
+				return m.pubsub.Publish(ctx, qg.Event{
 					Value: qg.EventGameEnded{
 						Leaderboard: state.buildLeaderboard(),
 					},
 				})
 			}),
 			cando.Reactor(func(ctx context.Context, _ any, next qg.CommandJeopardyChooseQuestion) error {
-				return pubsub.Publish(ctx, qg.Event{
+				return m.pubsub.Publish(ctx, qg.Event{
 					Value: qg.EventJeopardyTurnEnded{
 						Chooser:     state.ChoosingPlayer,
 						Leaderboard: state.buildLeaderboard(),
@@ -192,32 +208,32 @@ func newMachineData(id qg.GameID, data qg.JeopardyGameData, storer Storer, pubsu
 			}),
 			cando.Reactor(func(ctx context.Context, _ any, next qg.CommandJeopardyPressButton) error {
 				// We can still accept answers, so don't end the turn yet.
-				return pubsub.Publish(ctx, qg.Event{
+				return m.pubsub.Publish(ctx, qg.Event{
 					Value: qg.EventJeopardyResumeButton{
 						AlreadyAnsweredPlayers: state.alreadyAnsweredPlayers(),
 					},
 				})
 			}),
 			cando.Reactor(func(ctx context.Context, prev qg.CommandJoinGame, _ any) error {
-				return pubsub.Publish(ctx, qg.Event{
+				return m.pubsub.Publish(ctx, qg.Event{
 					Value: qg.EventPlayerJoined{
 						PlayerName: prev.PlayerName,
 					},
 				})
 			}),
 			cando.Reactor(func(ctx context.Context, prev qg.CommandJeopardyChooseQuestion, _ any) error {
-				return pubsub.Publish(ctx, qg.Event{
+				return m.pubsub.Publish(ctx, qg.Event{
 					Value: qg.EventJeopardyBeginQuestion{
 						Chooser:  state.ChoosingPlayer,
 						Category: prev.Category,
 						Question: prev.Question,
-						Points:   data.QuestionPoints(prev.Question),
+						Points:   m.data.QuestionPoints(prev.Question),
 					},
 				})
 			}),
 			cando.Reactor(func(ctx context.Context, prev qg.CommandJeopardyPressButton, _ any) error {
 				currentPlayer := playerFromContext(ctx)
-				return pubsub.Publish(ctx, qg.Event{
+				return m.pubsub.Publish(ctx, qg.Event{
 					Value: qg.EventJeopardyButtonPressed{
 						PlayerName: currentPlayer.Name,
 					},
@@ -233,7 +249,7 @@ func newMachineData(id qg.GameID, data qg.JeopardyGameData, storer Storer, pubsu
 			cando.State(func(ctx context.Context, cmd qg.CommandJoinGame) (cando.NextStates, error) {
 				var isAdmin bool
 				if cmd.ModeratorPassword != nil {
-					ok, err := storer.CompareGamePassword(ctx, id, *cmd.ModeratorPassword)
+					ok, err := m.storer.CompareGamePassword(ctx, m.id, *cmd.ModeratorPassword)
 					if err != nil {
 						return nil, errors.Wrap(err, "failed to compare game password")
 					}
@@ -280,7 +296,7 @@ func newMachineData(id qg.GameID, data qg.JeopardyGameData, storer Storer, pubsu
 					return nil, errors.New("not your turn")
 				}
 
-				_, _, err := data.QuestionAt(cmd.Category, cmd.Question)
+				_, _, err := m.data.QuestionAt(cmd.Category, cmd.Question)
 				if err != nil {
 					return nil, errors.Wrap(err, "invalid question")
 				}
@@ -317,7 +333,7 @@ func newMachineData(id qg.GameID, data qg.JeopardyGameData, storer Storer, pubsu
 					// Correct, so reward points and move on to the next
 					// question.
 					winningPlayer := state.Players[state.AnsweringPlayer]
-					winningPlayer.Score += data.QuestionPoints(state.CurrentQuestion)
+					winningPlayer.Score += m.data.QuestionPoints(state.CurrentQuestion)
 
 					// Mark the question as answered.
 					state.AnsweredQuestions[questionPos] = state.AnsweringPlayer

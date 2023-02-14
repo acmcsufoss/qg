@@ -12,11 +12,6 @@ type Publisher struct {
 	subs sync.Map
 }
 
-var (
-	_ qg.Publisher  = (*Publisher)(nil)
-	_ qg.Subscriber = (*Publisher)(nil)
-)
-
 // NewPublisher creates a new publisher.
 func NewPublisher() *Publisher {
 	return &Publisher{}
@@ -49,4 +44,12 @@ func (p *Publisher) Publish(ctx context.Context, msg qg.Event) error {
 		}
 	})
 	return nil
+}
+
+// CopyTo copies all event channels from the publisher to the given publisher.
+func (p *Publisher) CopyTo(other *Publisher) {
+	p.subs.Range(func(key, _ any) bool {
+		other.subs.Store(key, struct{}{})
+		return true
+	})
 }

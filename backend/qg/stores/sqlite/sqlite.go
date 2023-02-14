@@ -65,7 +65,7 @@ func (s *Store) Close() error {
 	return s.db.Close()
 }
 
-func (s *Store) MakeNewGame(ctx context.Context, data qg.GameData) (qg.GameID, error) {
+func (s *Store) CreateGame(ctx context.Context, data qg.GameData) (qg.GameID, error) {
 	id := qg.GenerateGameID()
 
 	b, err := json.Marshal(data)
