@@ -232,7 +232,6 @@ export interface JeopardyCategory {
  */
 export interface JeopardyGameData {
   categories: JeopardyCategory[];
-  moderator_password: string;
 
   /**
    * score_multiplier is the score multiplier for each question. The
@@ -307,3 +306,29 @@ export interface LeaderboardEntry {
  * PlayerName is the name of a player.
  */
 export type PlayerName = string;
+
+export interface RequestGetGame {
+  gameID: string;
+}
+
+export interface RequestGetJeopardyGame {
+  gameID: string;
+}
+
+export interface RequestNewGame {
+  data: GameData;
+  moderator_password: string;
+}
+
+export interface ResponseGetGame {
+  gameType: GameType;
+}
+
+export interface ResponseGetJeopardyGame {
+  info: JeopardyGameInfo;
+}
+
+export interface ResponseNewGame {
+  gameID: string;
+  gameType: GameType;
+}

@@ -448,8 +448,7 @@ type JeopardyCategory struct {
 
 // JeopardyGameData is the game data for a Jeopardy game.
 type JeopardyGameData struct {
-	Categories        []JeopardyCategory `json:"categories"`
-	ModeratorPassword string             `json:"moderator_password"`
+	Categories []JeopardyCategory `json:"categories"`
 	// score_multiplier is the score multiplier for each question. The
 	// default is 100.
 	ScoreMultiplier *float32 `json:"score_multiplier,omitempty"`
@@ -497,3 +496,29 @@ type LeaderboardEntry struct {
 
 // PlayerName is the name of a player.
 type PlayerName = string
+
+type RequestGetGame struct {
+	GameID string `json:"gameID"`
+}
+
+type RequestGetJeopardyGame struct {
+	GameID string `json:"gameID"`
+}
+
+type RequestNewGame struct {
+	Data              GameData `json:"data"`
+	ModeratorPassword string   `json:"moderator_password"`
+}
+
+type ResponseGetGame struct {
+	GameType GameType `json:"gameType"`
+}
+
+type ResponseGetJeopardyGame struct {
+	Info JeopardyGameInfo `json:"info"`
+}
+
+type ResponseNewGame struct {
+	GameID   string   `json:"gameID"`
+	GameType GameType `json:"gameType"`
+}

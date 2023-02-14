@@ -6,6 +6,7 @@ package main
 //go:generate jtd-codegen ./types/qg.json --go-package qg --go-out ./backend/qg/
 //go:generate gofmt -w ./backend/qg/qg.go
 //go:generate cp ./types/qg.json ./backend/qg/schema.json
+//go:generate go generate ./backend/qg/stores/sqlite
 
 //go:generate jtd-codegen ./types/qg.json --typescript-out ./frontend/src/lib/qg-jtd/
 //go:generate prettier -w ./frontend/src/lib/qg-jtd/index.ts

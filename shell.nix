@@ -1,4 +1,23 @@
-{ pkgs ? import <nixpkgs> {} }:
+let overlay = self: super: 
+	let nixpkgs_go_1_20 = import (super.fetchFromGitHub {
+			owner  = "NixOS";
+			repo   = "nixpkgs";
+			rev    = "46c194bd83efc43da64cb137cab1178071f09c3b";
+			sha256 = "01gjm68kr373fznbhgzbkblm1c7ry5mfvsdh4qpvy0h0wd7m8fsw";
+		}) {};	
+	in
+	{
+		go =
+			if super.lib.versionAtLeast super.go.version "1.20"
+			then super.go
+			else self.go_1_20;
+		go_1_20 =
+			if super ? go_1_20
+			then super.go_1_20
+			else nixpkgs_go_1_20.go_1_20;
+	};
+
+in { pkgs ? import <nixpkgs> { overlays = [ overlay ]; } }:
 
 let fetchPatchFromGitHub = { owner, repo, rev, sha256 }:
 		pkgs.fetchpatch {
@@ -20,19 +39,20 @@ let fetchPatchFromGitHub = { owner, repo, rev, sha256 }:
 		vendorSha256 = "1dknfg3w97421c8dnld5kvx0psicvmxr7wzkhqipaxplcg3cqrr9";
 	};
 
-	sqlc = pkgs.buildGoModule {
+	sqlc = pkgs.buildGoModule rec {
 		name = "sqlc";
-		version = "1.12.0";
+		version = "1.17.0";
 
 		src = pkgs.fetchFromGitHub {
 			owner  = "kyleconroy";
 			repo   = "sqlc";
-			rev    = "45bd150";
-			sha256 = "1np2xd9q0aaqfbcv3zcxjrfd1im9xr22g2jz5whywdr1m67a8lv2";
+			rev    = "v" + version;
+			sha256 = "0mmibx1ak3w8zsd14mkcjzr27zr4hmgdczk2s41w0wxy0d1yaxlj";
 		};
 
+		doCheck = false;
 		proxyVendor = true;
-		vendorSha256 = "0mk1bs8ppis7dr3mcg73j8abvi1qpbg06adx8sxpzrfag4i9vg8k";
+		vendorSha256 = "0dq4mbccsrlli94yvrhxln33qql1psv8k4lbsrjbyyszl5fq6a0s";
 	};
 
 	goose = pkgs.buildGoModule {
@@ -105,7 +125,7 @@ let fetchPatchFromGitHub = { owner, repo, rev, sha256 }:
 
 in pkgs.mkShell {
 	buildInputs = with pkgs; [
-		go_1_18
+		go
 		gopls
 		goapi-gen
 		goose

@@ -267,9 +267,6 @@ export default {
             ref: "JeopardyCategory",
           },
         },
-        moderator_password: {
-          type: "string",
-        },
       },
     },
     JeopardyGameInfo: {
@@ -370,6 +367,54 @@ export default {
         description: "PlayerName is the name of a player.\n",
       },
       type: "string",
+    },
+    RequestGetGame: {
+      properties: {
+        gameID: {
+          type: "string",
+        },
+      },
+    },
+    RequestGetJeopardyGame: {
+      properties: {
+        gameID: {
+          type: "string",
+        },
+      },
+    },
+    RequestNewGame: {
+      properties: {
+        data: {
+          ref: "GameData",
+        },
+        moderator_password: {
+          type: "string",
+        },
+      },
+    },
+    ResponseGetGame: {
+      properties: {
+        gameType: {
+          ref: "GameType",
+        },
+      },
+    },
+    ResponseGetJeopardyGame: {
+      properties: {
+        info: {
+          ref: "JeopardyGameInfo",
+        },
+      },
+    },
+    ResponseNewGame: {
+      properties: {
+        gameID: {
+          type: "string",
+        },
+        gameType: {
+          ref: "GameType",
+        },
+      },
     },
   },
 } as jtd.Schema;

@@ -222,10 +222,6 @@ func (f *Machine) Start(ctx context.Context) (err error) {
 	})
 }
 
-func (f *Machine) Resume(ctx context.Context, state SavedState[any]) (err error) {
-
-}
-
 // Change allows you to change the current, "main" State assigned to the FSM.
 // The caller must have called Start first, otherwise an error is returned.
 func (f *Machine) Change(ctx context.Context, data any) (err error) {
