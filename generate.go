@@ -1,4 +1,6 @@
-package main
+//go:build ignore
+
+package ignore
 
 //go:generate jsonnet ./types/qg.jsonnet -o ./types/qg.json
 //go:generate prettier -w ./types/qg.json

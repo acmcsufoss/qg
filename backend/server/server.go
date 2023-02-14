@@ -5,11 +5,11 @@ import (
 	"io"
 	"net/http"
 
-	"etok.codes/qg/backend/internal/hrt"
-	"etok.codes/qg/backend/qg"
-	"etok.codes/qg/backend/qg/games"
-	"etok.codes/qg/backend/qg/games/jeopardy"
-	"etok.codes/qg/backend/server/ws"
+	"oss.acmcsuf.com/qg/backend/internal/hrt"
+	"oss.acmcsuf.com/qg/backend/qg"
+	"oss.acmcsuf.com/qg/backend/qg/games"
+	"oss.acmcsuf.com/qg/backend/qg/games/jeopardy"
+	"oss.acmcsuf.com/qg/backend/server/ws"
 	"github.com/go-chi/chi/v5"
 	"github.com/pkg/errors"
 )

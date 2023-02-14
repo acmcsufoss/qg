@@ -5,9 +5,9 @@ import (
 	"sort"
 	"sync"
 
-	"etok.codes/qg/backend/internal/cando"
-	"etok.codes/qg/backend/internal/pubsub"
-	"etok.codes/qg/backend/qg"
+	"oss.acmcsuf.com/qg/backend/internal/cando"
+	"oss.acmcsuf.com/qg/backend/internal/pubsub"
+	"oss.acmcsuf.com/qg/backend/qg"
 	"github.com/pkg/errors"
 )
 

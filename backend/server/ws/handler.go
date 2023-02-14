@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"sync"
 
-	"etok.codes/qg/backend/qg"
+	"oss.acmcsuf.com/qg/backend/qg"
 	"github.com/gorilla/websocket"
 )
 

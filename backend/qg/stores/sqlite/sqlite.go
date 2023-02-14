@@ -5,9 +5,9 @@ import (
 	"database/sql"
 	"encoding/json"
 
-	"etok.codes/qg/backend/qg"
-	"etok.codes/qg/backend/qg/games/jeopardy"
-	"etok.codes/qg/backend/qg/stores/sqlite/sqlitec"
+	"oss.acmcsuf.com/qg/backend/qg"
+	"oss.acmcsuf.com/qg/backend/qg/games/jeopardy"
+	"oss.acmcsuf.com/qg/backend/qg/stores/sqlite/sqlitec"
 	"github.com/pkg/errors"
 
 	_ "modernc.org/sqlite"

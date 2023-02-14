@@ -1,4 +1,4 @@
-module etok.codes/qg
+module oss.acmcsuf.com/qg
 
 go 1.20
 

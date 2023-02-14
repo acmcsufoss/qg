@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"etok.codes/qg/backend/qg"
+	"oss.acmcsuf.com/qg/backend/qg"
 	"github.com/gorilla/websocket"
 	"golang.org/x/time/rate"
 )

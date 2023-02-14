@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"etok.codes/qg/backend/qg"
+	"oss.acmcsuf.com/qg/backend/qg"
 	"github.com/pkg/errors"
 )
 

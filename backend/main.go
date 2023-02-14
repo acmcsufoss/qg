@@ -8,11 +8,11 @@ import (
 	"os"
 	"os/signal"
 
-	"etok.codes/qg/backend/qg"
-	"etok.codes/qg/backend/qg/games"
-	"etok.codes/qg/backend/qg/games/jeopardy"
-	"etok.codes/qg/backend/qg/stores/sqlite"
-	"etok.codes/qg/backend/server"
+	"oss.acmcsuf.com/qg/backend/qg"
+	"oss.acmcsuf.com/qg/backend/qg/games"
+	"oss.acmcsuf.com/qg/backend/qg/games/jeopardy"
+	"oss.acmcsuf.com/qg/backend/qg/stores/sqlite"
+	"oss.acmcsuf.com/qg/backend/server"
 	"github.com/diamondburned/listener"
 	"github.com/go-chi/chi/v5"
 )
