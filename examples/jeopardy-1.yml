@@ -1,0 +1,21 @@
+game: jeopardy
+data:
+  categories:
+    - name: Open Source
+      questions:
+        - question: |
+            What is the name of the open source project that this game is based
+            on?
+        - question: |
+            Who pioneered the GNU Free Software Foundation?
+        - question: |
+            Which person ate foot fungus?
+
+    - name: ACM
+      questions:
+        - question: |
+            Who is the current ACM CSUF President?
+        - question: |
+            What team branch is not part of ACM CSUF?
+        - question: |
+            What was the biggest ACM CSUF event in January 2023?
