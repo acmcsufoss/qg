@@ -126,6 +126,29 @@
         <label for="is-moderator">I'm a moderator/organizer</label>
       </formset>
     </form>
+
+    <footer>
+      <p>
+        Source code:
+        <a
+          href="https://github.com/acmcsufoss/qg"
+          target="_blank"
+          rel="noreferrer"
+        >
+          acmcsufoss/qg
+        </a>
+        <br />
+        Licensed under the
+        <a
+          href="https://opensource.org/license/mit/"
+          target="_blank"
+          rel="noreferrer"
+        >
+          MIT
+        </a>
+        license.
+      </p>
+    </footer>
   </main>
 </Loadable>
 
@@ -139,15 +162,28 @@
     position: relative;
   }
 
+  footer {
+    width: 100%;
+    max-width: 600px;
+    margin: auto;
+    padding: 0 var(--spacing);
+    border-top: 1px solid var(--muted-color);
+  }
+
   form {
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: stretch;
-    height: 100%;
     max-width: 600px;
     margin: 0 auto;
+    flex: 1;
     position: relative;
+  }
+
+  form #is-moderator-form {
+    position: absolute;
+    bottom: 0;
   }
 
   .last-in-form input {
@@ -155,9 +191,7 @@
   }
 
   #brand {
-    position: absolute;
     align-self: center;
-    top: 0;
     text-align: center;
     font-size: 3rem;
     font-weight: lighter;
@@ -170,7 +204,6 @@
   #is-moderator-form {
     display: inline-flex;
     align-items: center;
-    position: absolute;
     bottom: 0;
     margin: var(--typography-spacing-vertical) 0;
   }
