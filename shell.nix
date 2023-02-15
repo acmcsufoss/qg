@@ -139,6 +139,7 @@ in pkgs.mkShell {
 		jsonnet
 		jtd-codegen
 		jsonnet-language-server
+		caddy
 	];
 
 	shellHook = ''

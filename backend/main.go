@@ -8,17 +8,17 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/diamondburned/listener"
+	"github.com/go-chi/chi/v5"
 	"oss.acmcsuf.com/qg/backend/qg"
 	"oss.acmcsuf.com/qg/backend/qg/games"
 	"oss.acmcsuf.com/qg/backend/qg/games/jeopardy"
 	"oss.acmcsuf.com/qg/backend/qg/stores/sqlite"
 	"oss.acmcsuf.com/qg/backend/server"
-	"github.com/diamondburned/listener"
-	"github.com/go-chi/chi/v5"
 )
 
 var (
-	addr       = "localhost:8080"
+	addr       = "localhost:8081"
 	sqlitePath = "/tmp/qg.sqlite"
 )
 

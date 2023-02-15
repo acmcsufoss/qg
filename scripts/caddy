@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+srcdir=$(realpath "$(dirname "$0")/..")
+cd "$srcdir"
+
+pids=()
+
+(go run ./backend --addr localhost:8081) &
+pids+=($!)
+
+(cd frontend && vite dev --port 8082 | cat) &
+pids+=($!)
+
+(caddy run --watch --config ./scripts/Caddyfile) &
+pids+=($!)
+
+trap 'kill -INT ${pids[*]}' EXIT
+wait ${pids[*]}
