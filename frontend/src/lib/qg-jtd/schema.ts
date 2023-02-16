@@ -179,7 +179,27 @@ export default {
             description:
               "EventJoinedGame is emitted when the current player joins a game. It is a\nreply to CommandJoinGame and is only for the current player. Not to be\nconfused with EventPlayerJoinedGame, which is emitted when any player\njoins the current game.\n",
           },
-          properties: {},
+          properties: {
+            game: {
+              discriminator: "type",
+              mapping: {
+                jeopardy: {
+                  properties: {
+                    data: {
+                      ref: "JeopardyGameInfo",
+                    },
+                  },
+                },
+              },
+            },
+            gameData: {
+              nullable: true,
+              ref: "GameData",
+            },
+            isModerator: {
+              type: "boolean",
+            },
+          },
         },
         PlayerJoined: {
           metadata: {

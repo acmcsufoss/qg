@@ -168,6 +168,13 @@ export interface EventJeopardyTurnEnded {
   leaderboard: Leaderboard;
 }
 
+export type EventJoinedGameGame = EventJoinedGameGameJeopardy;
+
+export interface EventJoinedGameGameJeopardy {
+  type: "jeopardy";
+  data: JeopardyGameInfo;
+}
+
 /**
  * EventJoinedGame is emitted when the current player joins a game. It is a
  * reply to CommandJoinGame and is only for the current player. Not to be
@@ -176,6 +183,9 @@ export interface EventJeopardyTurnEnded {
  */
 export interface EventJoinedGame {
   type: "JoinedGame";
+  game: EventJoinedGameGame;
+  gameData: GameData | null;
+  isModerator: boolean;
 }
 
 /**

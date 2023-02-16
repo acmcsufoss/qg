@@ -340,11 +340,73 @@ type EventJeopardyTurnEnded struct {
 	Leaderboard Leaderboard `json:"leaderboard"`
 }
 
+type EventJoinedGameGame struct {
+	// Value can be the following types:
+	//  - [EventJoinedGameGameJeopardy] (jeopardy)
+	Value valueEventJoinedGameGame
+
+	t string
+}
+
+func (v EventJoinedGameGame) MarshalJSON() ([]byte, error) {
+	switch value := v.Value.(type) {
+	case EventJoinedGameGameJeopardy:
+		return json.Marshal(struct {
+			T string `json:"type"`
+			EventJoinedGameGameJeopardy
+		}{"jeopardy", value})
+	default:
+		panic("unreachable")
+	}
+}
+
+func (v *EventJoinedGameGame) UnmarshalJSON(b []byte) error {
+	var t struct {
+		T string `json:"type"`
+	}
+	if err := json.Unmarshal(b, &t); err != nil {
+		return err
+	}
+
+	var value valueEventJoinedGameGame
+	var err error
+
+	switch t.T {
+	case "jeopardy":
+		var v EventJoinedGameGameJeopardy
+		err = json.Unmarshal(b, &v)
+		value = v
+	default:
+		err = fmt.Errorf("bad Type value: %s", t.T)
+	}
+
+	if err != nil {
+		return err
+	}
+
+	v.t = t.T
+	v.Value = value
+	return nil
+}
+
+type valueEventJoinedGameGame interface {
+	isEventJoinedGameGame()
+}
+
+func (EventJoinedGameGameJeopardy) isEventJoinedGameGame() {}
+
+type EventJoinedGameGameJeopardy struct {
+	Data JeopardyGameInfo `json:"data"`
+}
+
 // EventJoinedGame is emitted when the current player joins a game. It is a
 // reply to CommandJoinGame and is only for the current player. Not to be
 // confused with EventPlayerJoinedGame, which is emitted when any player
 // joins the current game.
 type EventJoinedGame struct {
+	Game        EventJoinedGameGame `json:"game"`
+	GameData    *GameData           `json:"gameData"`
+	IsModerator bool                `json:"isModerator"`
 }
 
 // EventPlayerJoined is emitted when a player joins the current game.

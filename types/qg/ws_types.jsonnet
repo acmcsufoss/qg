@@ -7,13 +7,13 @@ local schema = import '../lib/schema.jsonnet';
       confused with EventPlayerJoinedGame, which is emitted when any player
       joins the current game.
     |||,
-    schema.description({
+    schema.properties({
       game: schema.typeUnion({
         jeopardy: 'JeopardyGameInfo',
         // kahoot: 'KahootGameInfo',
       }),
       isModerator: schema.boolean,
-      gameData: schema.nullable(schema.ref('Game')),
+      gameData: schema.nullable(schema.ref('GameData')),
     }),
   ),
 
