@@ -8,12 +8,9 @@ local schema = import '../lib/schema.jsonnet';
       joins the current game.
     |||,
     schema.properties({
-      game: schema.typeUnion({
-        jeopardy: 'JeopardyGameInfo',
-        // kahoot: 'KahootGameInfo',
-      }),
-      isModerator: schema.boolean,
+      gameInfo: schema.ref('GameInfo'),
       gameData: schema.nullable(schema.ref('GameData')),
+      isAdmin: schema.boolean,
     }),
   ),
 
@@ -50,8 +47,8 @@ local schema = import '../lib/schema.jsonnet';
         'playerName is the wanted name of the user.',
         schema.ref('PlayerName')
       ),
-      moderatorPassword: schema.description(
-        'moderatorPassword is the password of the moderator of the game.',
+      adminPassword: schema.description(
+        'adminPassword is the password of the admin of the game.',
         schema.nullable(schema.string)
       ),
     })
@@ -67,7 +64,7 @@ local schema = import '../lib/schema.jsonnet';
   CommandEndGame: schema.description(
     |||
       CommandEndGame is sent by a client to end the current game. The server
-      will respond with an EventGameEnded. Only game moderators (including the
+      will respond with an EventGameEnded. Only game admins (including the
       host) can end the game.
     |||,
     schema.properties({

@@ -10,6 +10,11 @@ local schema = import '../lib/schema.jsonnet';
     })
   ),
 
+  GameInfo: schema.typeUnion({
+    jeopardy: 'JeopardyGameInfo',
+    // kahoot: 'KahootGameInfo',
+  }),
+
   GameType: schema.enum([
     'jeopardy',
     'kahoot',

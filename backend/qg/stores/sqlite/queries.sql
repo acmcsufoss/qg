@@ -1,10 +1,10 @@
 -- name: AddGame :exec
 INSERT INTO games (id, typ, data) VALUES (?, ?, ?);
 
--- name: SetGameModeratorPassword :exec
+-- name: SetGameAdminPassword :exec
 UPDATE games SET mod_password = ? WHERE id = ?;
 
--- name: GetGameModeratorPassword :one
+-- name: GetGameAdminPassword :one
 SELECT mod_password FROM games WHERE id = ?;
 
 -- name: GetGameType :one

@@ -93,7 +93,7 @@ func (h *apiHandler) postGame(ctx context.Context, body qg.RequestNewGame) (qg.R
 		return qg.ResponseNewGame{}, err
 	}
 
-	if err := h.store.SetGamePassword(ctx, gameID, body.ModeratorPassword); err != nil {
+	if err := h.store.SetGamePassword(ctx, gameID, body.AdminPassword); err != nil {
 		return qg.ResponseNewGame{}, errors.Wrap(err, "failed to set game password")
 	}
 

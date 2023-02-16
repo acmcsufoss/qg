@@ -78,7 +78,7 @@ local schema = import '../lib/schema.jsonnet';
 
   CommandJeopardyPlayerJudgment: schema.description(
     |||
-      CommandJeopardyPlayerJudgment is emitted by a game moderator to indicate
+      CommandJeopardyPlayerJudgment is emitted by a game admin to indicate
       whether a player has answered a question correctly. The winning player is
       whoever the last EventJeopardyButtonPressed event indicated. That player
       will instantly receive the points for the question, and the game will let

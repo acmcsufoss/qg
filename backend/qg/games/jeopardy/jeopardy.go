@@ -5,10 +5,10 @@ import (
 	"sort"
 	"sync"
 
+	"github.com/pkg/errors"
 	"oss.acmcsuf.com/qg/backend/internal/cando"
 	"oss.acmcsuf.com/qg/backend/internal/pubsub"
 	"oss.acmcsuf.com/qg/backend/qg"
-	"github.com/pkg/errors"
 )
 
 type ctxKey int
@@ -215,6 +215,17 @@ func newMachineData(m managedGameData) cando.MachineData {
 				})
 			}),
 			cando.Reactor(func(ctx context.Context, prev qg.CommandJoinGame, _ any) error {
+				currentPlayer := playerFromContext(ctx)
+				return m.pubsub.Publish(ctx, qg.Event{
+					Value: qg.EventJoinedGame{
+						GameInfo: qg.GameInfo{
+							Value: qg.GameInfoJeopardy{Data: qg.ConvertJeopardyGameData(m.data)},
+						},
+						IsAdmin: currentPlayer.IsAdmin,
+					},
+				})
+			}),
+			cando.Reactor(func(ctx context.Context, prev qg.CommandJoinGame, _ any) error {
 				return m.pubsub.Publish(ctx, qg.Event{
 					Value: qg.EventPlayerJoined{
 						PlayerName: prev.PlayerName,
@@ -248,13 +259,13 @@ func newMachineData(m managedGameData) cando.MachineData {
 			}),
 			cando.State(func(ctx context.Context, cmd qg.CommandJoinGame) (cando.NextStates, error) {
 				var isAdmin bool
-				if cmd.ModeratorPassword != nil {
-					ok, err := m.storer.CompareGamePassword(ctx, m.id, *cmd.ModeratorPassword)
+				if cmd.AdminPassword != nil {
+					ok, err := m.storer.CompareGamePassword(ctx, m.id, *cmd.AdminPassword)
 					if err != nil {
 						return nil, errors.Wrap(err, "failed to compare game password")
 					}
 					if !ok {
-						return nil, errors.New("invalid moderator password")
+						return nil, errors.New("invalid admin password")
 					}
 					isAdmin = true
 				}
@@ -272,7 +283,7 @@ func newMachineData(m managedGameData) cando.MachineData {
 				}
 
 				return cando.NextStates{
-					cando.Next[qg.CommandJoinGame](),
+					cando.Next[qg.CommandJeopardyChooseQuestion](),
 					cando.Next[qg.CommandBeginGame](),
 				}, nil
 			}),

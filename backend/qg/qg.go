@@ -124,7 +124,7 @@ type CommandBeginGame struct {
 }
 
 // CommandEndGame is sent by a client to end the current game. The server
-// will respond with an EventGameEnded. Only game moderators (including the
+// will respond with an EventGameEnded. Only game admins (including the
 // host) can end the game.
 type CommandEndGame struct {
 	// declareWinner determines whether the game should be ended with a
@@ -141,7 +141,7 @@ type CommandJeopardyChooseQuestion struct {
 	Question int32 `json:"question"`
 }
 
-// CommandJeopardyPlayerJudgment is emitted by a game moderator to indicate
+// CommandJeopardyPlayerJudgment is emitted by a game admin to indicate
 // whether a player has answered a question correctly. The winning player is
 // whoever the last EventJeopardyButtonPressed event indicated. That player
 // will instantly receive the points for the question, and the game will let
@@ -161,10 +161,10 @@ type CommandJeopardyPressButton struct {
 // user) supplies a game ID and a player name. The server will respond with
 // an EventJoinedGame.
 type CommandJoinGame struct {
+	// adminPassword is the password of the admin of the game.
+	AdminPassword *string `json:"adminPassword"`
 	// gameID is the ID of the game to join.
 	GameID GameID `json:"gameID"`
-	// moderatorPassword is the password of the moderator of the game.
-	ModeratorPassword *string `json:"moderatorPassword"`
 	// playerName is the wanted name of the user.
 	PlayerName PlayerName `json:"playerName"`
 }
@@ -340,73 +340,14 @@ type EventJeopardyTurnEnded struct {
 	Leaderboard Leaderboard `json:"leaderboard"`
 }
 
-type EventJoinedGameGame struct {
-	// Value can be the following types:
-	//  - [EventJoinedGameGameJeopardy] (jeopardy)
-	Value valueEventJoinedGameGame
-
-	t string
-}
-
-func (v EventJoinedGameGame) MarshalJSON() ([]byte, error) {
-	switch value := v.Value.(type) {
-	case EventJoinedGameGameJeopardy:
-		return json.Marshal(struct {
-			T string `json:"type"`
-			EventJoinedGameGameJeopardy
-		}{"jeopardy", value})
-	default:
-		panic("unreachable")
-	}
-}
-
-func (v *EventJoinedGameGame) UnmarshalJSON(b []byte) error {
-	var t struct {
-		T string `json:"type"`
-	}
-	if err := json.Unmarshal(b, &t); err != nil {
-		return err
-	}
-
-	var value valueEventJoinedGameGame
-	var err error
-
-	switch t.T {
-	case "jeopardy":
-		var v EventJoinedGameGameJeopardy
-		err = json.Unmarshal(b, &v)
-		value = v
-	default:
-		err = fmt.Errorf("bad Type value: %s", t.T)
-	}
-
-	if err != nil {
-		return err
-	}
-
-	v.t = t.T
-	v.Value = value
-	return nil
-}
-
-type valueEventJoinedGameGame interface {
-	isEventJoinedGameGame()
-}
-
-func (EventJoinedGameGameJeopardy) isEventJoinedGameGame() {}
-
-type EventJoinedGameGameJeopardy struct {
-	Data JeopardyGameInfo `json:"data"`
-}
-
 // EventJoinedGame is emitted when the current player joins a game. It is a
 // reply to CommandJoinGame and is only for the current player. Not to be
 // confused with EventPlayerJoinedGame, which is emitted when any player
 // joins the current game.
 type EventJoinedGame struct {
-	Game        EventJoinedGameGame `json:"game"`
-	GameData    *GameData           `json:"gameData"`
-	IsModerator bool                `json:"isModerator"`
+	GameData *GameData `json:"gameData"`
+	GameInfo GameInfo  `json:"gameInfo"`
+	IsAdmin  bool      `json:"isAdmin"`
 }
 
 // EventPlayerJoined is emitted when a player joins the current game.
@@ -493,6 +434,65 @@ type GameDataKahoot struct {
 // code to join the game.
 type GameID = string
 
+type GameInfo struct {
+	// Value can be the following types:
+	//  - [GameInfoJeopardy] (jeopardy)
+	Value valueGameInfo
+
+	t string
+}
+
+func (v GameInfo) MarshalJSON() ([]byte, error) {
+	switch value := v.Value.(type) {
+	case GameInfoJeopardy:
+		return json.Marshal(struct {
+			T string `json:"type"`
+			GameInfoJeopardy
+		}{"jeopardy", value})
+	default:
+		panic("unreachable")
+	}
+}
+
+func (v *GameInfo) UnmarshalJSON(b []byte) error {
+	var t struct {
+		T string `json:"type"`
+	}
+	if err := json.Unmarshal(b, &t); err != nil {
+		return err
+	}
+
+	var value valueGameInfo
+	var err error
+
+	switch t.T {
+	case "jeopardy":
+		var v GameInfoJeopardy
+		err = json.Unmarshal(b, &v)
+		value = v
+	default:
+		err = fmt.Errorf("bad Type value: %s", t.T)
+	}
+
+	if err != nil {
+		return err
+	}
+
+	v.t = t.T
+	v.Value = value
+	return nil
+}
+
+type valueGameInfo interface {
+	isGameInfo()
+}
+
+func (GameInfoJeopardy) isGameInfo() {}
+
+type GameInfoJeopardy struct {
+	Data JeopardyGameInfo `json:"data"`
+}
+
 type GameType string
 
 const (
@@ -568,8 +568,8 @@ type RequestGetJeopardyGame struct {
 }
 
 type RequestNewGame struct {
-	Data              GameData `json:"data"`
-	ModeratorPassword string   `json:"moderator_password"`
+	AdminPassword string   `json:"admin_password"`
+	Data          GameData `json:"data"`
 }
 
 type ResponseGetGame struct {

@@ -15,7 +15,7 @@ export default {
         EndGame: {
           metadata: {
             description:
-              "CommandEndGame is sent by a client to end the current game. The server\nwill respond with an EventGameEnded. Only game moderators (including the\nhost) can end the game.\n",
+              "CommandEndGame is sent by a client to end the current game. The server\nwill respond with an EventGameEnded. Only game admins (including the\nhost) can end the game.\n",
           },
           properties: {
             declareWinner: {
@@ -44,7 +44,7 @@ export default {
         JeopardyPlayerJudgment: {
           metadata: {
             description:
-              "CommandJeopardyPlayerJudgment is emitted by a game moderator to indicate\nwhether a player has answered a question correctly. The winning player is\nwhoever the last EventJeopardyButtonPressed event indicated. That player\nwill instantly receive the points for the question, and the game will let\nthem choose the next category and question. If the player answered wrong,\nthen the game will let others press the button.\n",
+              "CommandJeopardyPlayerJudgment is emitted by a game admin to indicate\nwhether a player has answered a question correctly. The winning player is\nwhoever the last EventJeopardyButtonPressed event indicated. That player\nwill instantly receive the points for the question, and the game will let\nthem choose the next category and question. If the player answered wrong,\nthen the game will let others press the button.\n",
           },
           properties: {
             correct: {
@@ -65,19 +65,19 @@ export default {
               "CommandJoinGame is sent by a client to join a game. The client (or the\nuser) supplies a game ID and a player name. The server will respond with\nan EventJoinedGame.\n",
           },
           properties: {
+            adminPassword: {
+              metadata: {
+                description:
+                  "adminPassword is the password of the admin of the game.",
+              },
+              nullable: true,
+              type: "string",
+            },
             gameID: {
               metadata: {
                 description: "gameID is the ID of the game to join.",
               },
               ref: "GameID",
-            },
-            moderatorPassword: {
-              metadata: {
-                description:
-                  "moderatorPassword is the password of the moderator of the game.",
-              },
-              nullable: true,
-              type: "string",
             },
             playerName: {
               metadata: {
@@ -180,23 +180,14 @@ export default {
               "EventJoinedGame is emitted when the current player joins a game. It is a\nreply to CommandJoinGame and is only for the current player. Not to be\nconfused with EventPlayerJoinedGame, which is emitted when any player\njoins the current game.\n",
           },
           properties: {
-            game: {
-              discriminator: "type",
-              mapping: {
-                jeopardy: {
-                  properties: {
-                    data: {
-                      ref: "JeopardyGameInfo",
-                    },
-                  },
-                },
-              },
-            },
             gameData: {
               nullable: true,
               ref: "GameData",
             },
-            isModerator: {
+            gameInfo: {
+              ref: "GameInfo",
+            },
+            isAdmin: {
               type: "boolean",
             },
           },
@@ -243,6 +234,18 @@ export default {
           "GameID is the unique identifier for a game. Each player must type this\ncode to join the game.\n",
       },
       type: "string",
+    },
+    GameInfo: {
+      discriminator: "type",
+      mapping: {
+        jeopardy: {
+          properties: {
+            data: {
+              ref: "JeopardyGameInfo",
+            },
+          },
+        },
+      },
     },
     GameType: {
       enum: ["jeopardy", "kahoot"],
@@ -404,11 +407,11 @@ export default {
     },
     RequestNewGame: {
       properties: {
+        admin_password: {
+          type: "string",
+        },
         data: {
           ref: "GameData",
-        },
-        moderator_password: {
-          type: "string",
         },
       },
     },

@@ -19,7 +19,7 @@ export interface CommandBeginGame {
 
 /**
  * CommandEndGame is sent by a client to end the current game. The server
- * will respond with an EventGameEnded. Only game moderators (including the
+ * will respond with an EventGameEnded. Only game admins (including the
  * host) can end the game.
  */
 export interface CommandEndGame {
@@ -45,7 +45,7 @@ export interface CommandJeopardyChooseQuestion {
 }
 
 /**
- * CommandJeopardyPlayerJudgment is emitted by a game moderator to indicate
+ * CommandJeopardyPlayerJudgment is emitted by a game admin to indicate
  * whether a player has answered a question correctly. The winning player is
  * whoever the last EventJeopardyButtonPressed event indicated. That player
  * will instantly receive the points for the question, and the game will let
@@ -75,14 +75,14 @@ export interface CommandJoinGame {
   type: "JoinGame";
 
   /**
+   * adminPassword is the password of the admin of the game.
+   */
+  adminPassword: string | null;
+
+  /**
    * gameID is the ID of the game to join.
    */
   gameID: GameId;
-
-  /**
-   * moderatorPassword is the password of the moderator of the game.
-   */
-  moderatorPassword: string | null;
 
   /**
    * playerName is the wanted name of the user.
@@ -168,13 +168,6 @@ export interface EventJeopardyTurnEnded {
   leaderboard: Leaderboard;
 }
 
-export type EventJoinedGameGame = EventJoinedGameGameJeopardy;
-
-export interface EventJoinedGameGameJeopardy {
-  type: "jeopardy";
-  data: JeopardyGameInfo;
-}
-
 /**
  * EventJoinedGame is emitted when the current player joins a game. It is a
  * reply to CommandJoinGame and is only for the current player. Not to be
@@ -183,9 +176,9 @@ export interface EventJoinedGameGameJeopardy {
  */
 export interface EventJoinedGame {
   type: "JoinedGame";
-  game: EventJoinedGameGame;
   gameData: GameData | null;
-  isModerator: boolean;
+  gameInfo: GameInfo;
+  isAdmin: boolean;
 }
 
 /**
@@ -216,6 +209,13 @@ export interface GameDataKahoot {
  * code to join the game.
  */
 export type GameId = string;
+
+export type GameInfo = GameInfoJeopardy;
+
+export interface GameInfoJeopardy {
+  type: "jeopardy";
+  data: JeopardyGameInfo;
+}
 
 export enum GameType {
   Jeopardy = "jeopardy",
@@ -326,8 +326,8 @@ export interface RequestGetJeopardyGame {
 }
 
 export interface RequestNewGame {
+  admin_password: string;
   data: GameData;
-  moderator_password: string;
 }
 
 export interface ResponseGetGame {

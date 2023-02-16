@@ -5,10 +5,10 @@ import (
 	"database/sql"
 	"encoding/json"
 
+	"github.com/pkg/errors"
 	"oss.acmcsuf.com/qg/backend/qg"
 	"oss.acmcsuf.com/qg/backend/qg/games/jeopardy"
 	"oss.acmcsuf.com/qg/backend/qg/stores/sqlite/sqlitec"
-	"github.com/pkg/errors"
 
 	_ "modernc.org/sqlite"
 )
@@ -103,14 +103,14 @@ func (s *Store) Games(ctx context.Context) ([]qg.GameID, error) {
 }
 
 func (s *Store) SetGamePassword(ctx context.Context, id qg.GameID, password string) error {
-	return sqliteErr(s.q.SetGameModeratorPassword(ctx, sqlitec.SetGameModeratorPasswordParams{
+	return sqliteErr(s.q.SetGameAdminPassword(ctx, sqlitec.SetGameAdminPasswordParams{
 		ID:          id,
 		ModPassword: sql.NullString{String: password, Valid: password != ""},
 	}))
 }
 
 func (s *Store) CompareGamePassword(ctx context.Context, id qg.GameID, password string) (bool, error) {
-	p, err := s.q.GetGameModeratorPassword(ctx, id)
+	p, err := s.q.GetGameAdminPassword(ctx, id)
 	if err != nil {
 		return false, sqliteErr(err)
 	}

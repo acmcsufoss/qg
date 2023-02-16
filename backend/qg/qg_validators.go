@@ -26,6 +26,12 @@ func (v *GameData) Validate() error {
 	return Validate("GameData", v)
 }
 
+// Validate validates the GameInfo object. It implements the
+// Validator interface.
+func (v *GameInfo) Validate() error {
+	return Validate("GameInfo", v)
+}
+
 // Validate validates the JeopardyCategory object. It implements the
 // Validator interface.
 func (v *JeopardyCategory) Validate() error {

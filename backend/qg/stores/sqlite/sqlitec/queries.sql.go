@@ -25,6 +25,17 @@ func (q *Queries) AddGame(ctx context.Context, arg AddGameParams) error {
 	return err
 }
 
+const getGameAdminPassword = `-- name: GetGameAdminPassword :one
+SELECT mod_password FROM games WHERE id = ?
+`
+
+func (q *Queries) GetGameAdminPassword(ctx context.Context, id string) (sql.NullString, error) {
+	row := q.db.QueryRowContext(ctx, getGameAdminPassword, id)
+	var mod_password sql.NullString
+	err := row.Scan(&mod_password)
+	return mod_password, err
+}
+
 const getGameData = `-- name: GetGameData :one
 SELECT data FROM games WHERE id = ? AND typ = ?
 `
@@ -39,17 +50,6 @@ func (q *Queries) GetGameData(ctx context.Context, arg GetGameDataParams) ([]byt
 	var data []byte
 	err := row.Scan(&data)
 	return data, err
-}
-
-const getGameModeratorPassword = `-- name: GetGameModeratorPassword :one
-SELECT mod_password FROM games WHERE id = ?
-`
-
-func (q *Queries) GetGameModeratorPassword(ctx context.Context, id string) (sql.NullString, error) {
-	row := q.db.QueryRowContext(ctx, getGameModeratorPassword, id)
-	var mod_password sql.NullString
-	err := row.Scan(&mod_password)
-	return mod_password, err
 }
 
 const getGameType = `-- name: GetGameType :one
@@ -90,16 +90,16 @@ func (q *Queries) ListGames(ctx context.Context) ([]string, error) {
 	return items, nil
 }
 
-const setGameModeratorPassword = `-- name: SetGameModeratorPassword :exec
+const setGameAdminPassword = `-- name: SetGameAdminPassword :exec
 UPDATE games SET mod_password = ? WHERE id = ?
 `
 
-type SetGameModeratorPasswordParams struct {
+type SetGameAdminPasswordParams struct {
 	ModPassword sql.NullString
 	ID          string
 }
 
-func (q *Queries) SetGameModeratorPassword(ctx context.Context, arg SetGameModeratorPasswordParams) error {
-	_, err := q.db.ExecContext(ctx, setGameModeratorPassword, arg.ModPassword, arg.ID)
+func (q *Queries) SetGameAdminPassword(ctx context.Context, arg SetGameAdminPasswordParams) error {
+	_, err := q.db.ExecContext(ctx, setGameAdminPassword, arg.ModPassword, arg.ID)
 	return err
 }

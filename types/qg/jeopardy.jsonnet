@@ -16,12 +16,6 @@ local schema = import '../lib/schema.jsonnet';
           |||,
           schema.float,
         ),
-        // moderators: schema.description(
-        //   |||
-        //     moderators enables moderators being able to join.
-        //   |||,
-        //   schema.boolean,
-        // ),
         // score_to_win: schema.description(
         //   |||
         //     score_to_win is the score required to win the game.

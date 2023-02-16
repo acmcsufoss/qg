@@ -2,7 +2,7 @@ local schema = import '../lib/schema.jsonnet';
 {
   RequestNewGame: schema.properties({
     data: schema.ref('GameData'),
-    moderator_password: schema.string,
+    admin_password: schema.string,
   }),
   ResponseNewGame: schema.properties({
     gameID: schema.string,
