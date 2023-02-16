@@ -25,7 +25,7 @@
       await session.connect();
       ready = true;
     } catch (err) {
-      /* error = err; */
+      error = err;
     }
   });
 
