@@ -1,5 +1,9 @@
 local schema = import '../lib/schema.jsonnet';
 {
+  EventError: schema.properties({
+    'error': schema.ref('Error'),
+  }),
+
   EventJoinedGame: schema.description(
     |||
       EventJoinedGame is emitted when the current player joins a game. It is a
@@ -8,6 +12,7 @@ local schema = import '../lib/schema.jsonnet';
       joins the current game.
     |||,
     schema.properties({
+      gameID: schema.string,
       gameInfo: schema.ref('GameInfo'),
       gameData: schema.nullable(schema.ref('GameData')),
       isAdmin: schema.boolean,
@@ -21,6 +26,14 @@ local schema = import '../lib/schema.jsonnet';
     schema.properties({
       playerName: schema.ref('PlayerName'),
     }),
+  ),
+
+  EventGameStarted: schema.description(
+    |||
+      EventGameStarted is emitted when the game starts. It contains no data and
+      is only meant to be used to trigger the client to start the game.
+    |||,
+    schema.empty,
   ),
 
   EventGameEnded: schema.description(

@@ -177,7 +177,9 @@ type Error struct {
 
 type Event struct {
 	// Value can be the following types:
+	//  - [EventError] (Error)
 	//  - [EventGameEnded] (GameEnded)
+	//  - [EventGameStarted] (GameStarted)
 	//  - [EventJeopardyBeginQuestion] (JeopardyBeginQuestion)
 	//  - [EventJeopardyButtonPressed] (JeopardyButtonPressed)
 	//  - [EventJeopardyResumeButton] (JeopardyResumeButton)
@@ -191,11 +193,21 @@ type Event struct {
 
 func (v Event) MarshalJSON() ([]byte, error) {
 	switch value := v.Value.(type) {
+	case EventError:
+		return json.Marshal(struct {
+			T string `json:"type"`
+			EventError
+		}{"Error", value})
 	case EventGameEnded:
 		return json.Marshal(struct {
 			T string `json:"type"`
 			EventGameEnded
 		}{"GameEnded", value})
+	case EventGameStarted:
+		return json.Marshal(struct {
+			T string `json:"type"`
+			EventGameStarted
+		}{"GameStarted", value})
 	case EventJeopardyBeginQuestion:
 		return json.Marshal(struct {
 			T string `json:"type"`
@@ -243,8 +255,16 @@ func (v *Event) UnmarshalJSON(b []byte) error {
 	var err error
 
 	switch t.T {
+	case "Error":
+		var v EventError
+		err = json.Unmarshal(b, &v)
+		value = v
 	case "GameEnded":
 		var v EventGameEnded
+		err = json.Unmarshal(b, &v)
+		value = v
+	case "GameStarted":
+		var v EventGameStarted
 		err = json.Unmarshal(b, &v)
 		value = v
 	case "JeopardyBeginQuestion":
@@ -288,7 +308,9 @@ type valueEvent interface {
 	isEvent()
 }
 
+func (EventError) isEvent()                 {}
 func (EventGameEnded) isEvent()             {}
+func (EventGameStarted) isEvent()           {}
 func (EventJeopardyBeginQuestion) isEvent() {}
 func (EventJeopardyButtonPressed) isEvent() {}
 func (EventJeopardyResumeButton) isEvent()  {}
@@ -296,9 +318,18 @@ func (EventJeopardyTurnEnded) isEvent()     {}
 func (EventJoinedGame) isEvent()            {}
 func (EventPlayerJoined) isEvent()          {}
 
+type EventError struct {
+	Error Error `json:"error"`
+}
+
 // EventGameEnded is emitted when the current game ends.
 type EventGameEnded struct {
 	Leaderboard Leaderboard `json:"leaderboard"`
+}
+
+// EventGameStarted is emitted when the game starts. It contains no data and
+// is only meant to be used to trigger the client to start the game.
+type EventGameStarted struct {
 }
 
 // EventJeopardyBeginQuestion is emitted when a question begins within this
@@ -312,7 +343,7 @@ type EventJeopardyBeginQuestion struct {
 	Category int32      `json:"category"`
 	Chooser  PlayerName `json:"chooser"`
 	Points   float32    `json:"points"`
-	Question int32      `json:"question"`
+	Question string     `json:"question"`
 }
 
 // EventJeopardyButtonPressed is emitted when any player had pressed a button
@@ -346,6 +377,7 @@ type EventJeopardyTurnEnded struct {
 // joins the current game.
 type EventJoinedGame struct {
 	GameData *GameData `json:"gameData"`
+	GameID   string    `json:"gameID"`
 	GameInfo GameInfo  `json:"gameInfo"`
 	IsAdmin  bool      `json:"isAdmin"`
 }

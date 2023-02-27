@@ -8,9 +8,9 @@ import (
 	"sync"
 	"time"
 
-	"oss.acmcsuf.com/qg/backend/qg"
 	"github.com/gorilla/websocket"
 	"golang.org/x/time/rate"
+	"oss.acmcsuf.com/qg/backend/qg"
 )
 
 func newSendLimiter() *rate.Limiter {
@@ -54,12 +54,13 @@ func (h serverHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	server := &server{
 		ws:     conn,
+		ev:     ch,
 		cancel: cancel,
 	}
 
 	wg.Add(1)
 	go func() {
-		server.eventLoop(ctx, ch)
+		server.eventLoop(ctx)
 		wg.Done()
 	}()
 
@@ -73,6 +74,7 @@ func (h serverHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // server is a websocket server.
 type server struct {
 	ws     *websocket.Conn
+	ev     chan qg.Event
 	cancel context.CancelCauseFunc
 }
 
@@ -91,13 +93,25 @@ func (s *server) commandLoop(ctx context.Context, cmdh qg.CommandHandler) {
 		}
 
 		if err := cmdh.HandleCommand(ctx, cmd); err != nil {
-			s.cancel(err)
-			return
+			event := qg.Event{
+				Value: qg.EventError{
+					Error: qg.Error{
+						Message: err.Error(),
+					},
+				},
+			}
+
+			select {
+			case s.ev <- event:
+				continue
+			case <-ctx.Done():
+				return
+			}
 		}
 	}
 }
 
-func (s *server) eventLoop(ctx context.Context, ch <-chan qg.Event) {
+func (s *server) eventLoop(ctx context.Context) {
 	defer func() {
 		err := s.ws.Close()
 		s.cancel(err)
@@ -146,7 +160,7 @@ func (s *server) eventLoop(ctx context.Context, ch <-chan qg.Event) {
 				continue
 			}
 
-		case event, ok := <-ch:
+		case event, ok := <-s.ev:
 			if !ok {
 				s.cancel(nil)
 				continue

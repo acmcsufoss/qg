@@ -95,6 +95,13 @@
     "Event": {
       "discriminator": "type",
       "mapping": {
+        "Error": {
+          "properties": {
+            "error": {
+              "ref": "Error"
+            }
+          }
+        },
         "GameEnded": {
           "metadata": {
             "description": "EventGameEnded is emitted when the current game ends.\n"
@@ -104,6 +111,12 @@
               "ref": "Leaderboard"
             }
           }
+        },
+        "GameStarted": {
+          "metadata": {
+            "description": "EventGameStarted is emitted when the game starts. It contains no data and\nis only meant to be used to trigger the client to start the game.\n"
+          },
+          "properties": {}
         },
         "JeopardyBeginQuestion": {
           "metadata": {
@@ -120,7 +133,7 @@
               "type": "float32"
             },
             "question": {
-              "type": "int32"
+              "type": "string"
             }
           }
         },
@@ -167,6 +180,9 @@
             "gameData": {
               "nullable": true,
               "ref": "GameData"
+            },
+            "gameID": {
+              "type": "string"
             },
             "gameInfo": {
               "ref": "GameInfo"

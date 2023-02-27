@@ -218,6 +218,7 @@ func newMachineData(m managedGameData) cando.MachineData {
 				currentPlayer := playerFromContext(ctx)
 				return m.pubsub.Publish(ctx, qg.Event{
 					Value: qg.EventJoinedGame{
+						GameID: m.id,
 						GameInfo: qg.GameInfo{
 							Value: qg.GameInfoJeopardy{Data: qg.ConvertJeopardyGameData(m.data)},
 						},
@@ -230,6 +231,11 @@ func newMachineData(m managedGameData) cando.MachineData {
 					Value: qg.EventPlayerJoined{
 						PlayerName: prev.PlayerName,
 					},
+				})
+			}),
+			cando.Reactor(func(ctx context.Context, _ any, next qg.CommandBeginGame) error {
+				return m.pubsub.Publish(ctx, qg.Event{
+					Value: qg.EventGameStarted{},
 				})
 			}),
 			cando.Reactor(func(ctx context.Context, prev qg.CommandJeopardyChooseQuestion, _ any) error {

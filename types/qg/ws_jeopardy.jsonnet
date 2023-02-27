@@ -24,7 +24,7 @@ local schema = import '../lib/schema.jsonnet';
     schema.properties({
       chooser: schema.ref('PlayerName'),
       category: schema.int32,
-      question: schema.int32,
+      question: schema.string,
       points: schema.float,
     }),
   ),
