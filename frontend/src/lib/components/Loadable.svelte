@@ -7,7 +7,7 @@
   export let loading: boolean;
   export let loadingMessage = "";
 
-  export let error: unknown;
+  export let error: unknown | undefined = undefined;
   export let errorTitle = "Error!";
 
   function capitalizeFirst(str: string): string {

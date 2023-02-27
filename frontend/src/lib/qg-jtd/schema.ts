@@ -105,6 +105,13 @@ export default {
     Event: {
       discriminator: "type",
       mapping: {
+        Error: {
+          properties: {
+            error: {
+              ref: "Error",
+            },
+          },
+        },
         GameEnded: {
           metadata: {
             description:
@@ -115,6 +122,13 @@ export default {
               ref: "Leaderboard",
             },
           },
+        },
+        GameStarted: {
+          metadata: {
+            description:
+              "EventGameStarted is emitted when the game starts. It contains no data and\nis only meant to be used to trigger the client to start the game.\n",
+          },
+          properties: {},
         },
         JeopardyBeginQuestion: {
           metadata: {
@@ -132,7 +146,7 @@ export default {
               type: "float32",
             },
             question: {
-              type: "int32",
+              type: "string",
             },
           },
         },
@@ -183,6 +197,9 @@ export default {
             gameData: {
               nullable: true,
               ref: "GameData",
+            },
+            gameID: {
+              type: "string",
             },
             gameInfo: {
               ref: "GameInfo",

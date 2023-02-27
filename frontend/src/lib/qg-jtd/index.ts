@@ -101,7 +101,9 @@ export interface Error {
 }
 
 export type Event =
+  | EventError
   | EventGameEnded
+  | EventGameStarted
   | EventJeopardyBeginQuestion
   | EventJeopardyButtonPressed
   | EventJeopardyResumeButton
@@ -109,12 +111,25 @@ export type Event =
   | EventJoinedGame
   | EventPlayerJoined;
 
+export interface EventError {
+  type: "Error";
+  error: Error;
+}
+
 /**
  * EventGameEnded is emitted when the current game ends.
  */
 export interface EventGameEnded {
   type: "GameEnded";
   leaderboard: Leaderboard;
+}
+
+/**
+ * EventGameStarted is emitted when the game starts. It contains no data and
+ * is only meant to be used to trigger the client to start the game.
+ */
+export interface EventGameStarted {
+  type: "GameStarted";
 }
 
 /**
@@ -131,7 +146,7 @@ export interface EventJeopardyBeginQuestion {
   category: number;
   chooser: PlayerName;
   points: number;
-  question: number;
+  question: string;
 }
 
 /**
@@ -177,6 +192,7 @@ export interface EventJeopardyTurnEnded {
 export interface EventJoinedGame {
   type: "JoinedGame";
   gameData: GameData | null;
+  gameID: string;
   gameInfo: GameInfo;
   isAdmin: boolean;
 }

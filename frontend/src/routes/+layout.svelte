@@ -1,6 +1,27 @@
 <script>
-  import "normalize.css";
-  import { fade } from "svelte/transition";
+  import * as navigation from "$app/navigation";
+
+  import { fade, fly } from "svelte/transition";
+  import { game } from "$lib/stores/state";
+  import { event } from "$lib/stores/session";
+  import { toasts } from "$lib/stores/toasts";
+
+  event.subscribe((ev) => {
+    switch (ev.type) {
+      case "Error": {
+        // TODO: show a toast or something
+        console.error("error from server:", ev.error.message);
+        break;
+      }
+      case "JoinedGame": {
+        navigation.goto("/waiting");
+        break;
+      }
+      case "GameStarted": {
+        if ($game.jeopardy) navigation.goto(`/jeopardy/${game.id}`);
+      }
+    }
+  });
 </script>
 
 <noscript id="noscript-warning">
@@ -16,6 +37,16 @@
 <div class="transition-wrapper" transition:fade>
   <slot />
 </div>
+
+{#if $toasts}
+  <div class="toast-box">
+    {#each $toasts as toast}
+      <p class="toast" transition:fly={{ y: 100 }}>
+        {toast.message}
+      </p>
+    {/each}
+  </div>
+{/if}
 
 <style global>
   @import "normalize.css";

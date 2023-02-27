@@ -1,8 +1,12 @@
 <script lang="ts">
-  import * as qg from "$lib/qg";
-  import * as state from "$lib/state";
   import * as svelte from "svelte";
+  import * as navigation from "$app/navigation";
+
+  import { page } from "$app/stores";
   import { slide } from "svelte/transition";
+  import { name } from "$lib/stores/state";
+  import { session } from "$lib/stores/session";
+
   import Loadable from "$lib/components/Loadable.svelte";
   import TextualHRule from "$lib/components/TextualHRule.svelte";
 
@@ -13,30 +17,35 @@
   let error: unknown;
 
   let gameID = "";
-  let username = "";
-  let isModerator = false;
-  let moderatorPassword = "";
+  let isAdmin = false;
+  let adminPassword = "";
 
   svelte.onMount(async () => {
+    $session.addEventListener("close", () => {
+      // Kick the user back to the home page if the session closes.
+      if ($page.route.id != "/") navigation.goto("/");
+    });
+
     error = undefined;
     try {
-      const session = new qg.Session(window.location.href);
-      state.session.set(session);
-      await session.connect();
+      await $session.open();
       ready = true;
     } catch (err) {
       error = err;
     }
   });
 
-  function submit() {
-    const session = state.get(state.session);
-    session.send({
+  async function submit() {
+    await $session.send({
       type: "JoinGame",
       gameID: gameID,
-      playerName: username,
-      moderatorPassword: isModerator ? moderatorPassword : null,
+      playerName: $name,
+      adminPassword: isAdmin ? adminPassword : null,
     });
+
+    ready = false;
+    await $session.waitForEvent(["JoinedGame", "Error"]);
+    ready = true;
   }
 </script>
 
@@ -82,21 +91,18 @@
           minlength="1"
           maxlength="20"
           required
-          bind:value={username}
+          bind:value={$name}
         />
       </formset>
 
-      {#if isModerator}
-        <formset
-          id="moderator-password-form"
-          transition:slide={{ duration: 200 }}
-        >
-          <label for="moderator-password">Enter your moderator password:</label>
+      {#if isAdmin}
+        <formset id="admin-password-form" transition:slide={{ duration: 200 }}>
+          <label for="admin-password">Enter your admin password:</label>
           <input
             type="password"
-            id="moderator-password"
-            required={isModerator}
-            bind:value={moderatorPassword}
+            id="admin-password"
+            required={isAdmin}
+            bind:value={adminPassword}
           />
         </formset>
       {/if}
@@ -105,7 +111,7 @@
         <input type="submit" id="submit" value="Join" />
       </formset>
 
-      {#if isModerator}
+      {#if isAdmin}
         <formset
           id="create-new-form"
           class="last-in-form"
@@ -121,9 +127,9 @@
         </formset>
       {/if}
 
-      <formset id="is-moderator-form">
-        <input type="checkbox" id="is-moderator" bind:checked={isModerator} />
-        <label for="is-moderator">I'm a moderator/organizer</label>
+      <formset id="is-admin-form">
+        <input type="checkbox" id="is-admin" bind:checked={isAdmin} />
+        <label for="is-admin">I'm a admin/organizer</label>
       </formset>
     </form>
 
@@ -181,7 +187,7 @@
     position: relative;
   }
 
-  form #is-moderator-form {
+  form #is-admin-form {
     position: absolute;
     bottom: 0;
   }
@@ -201,7 +207,7 @@
     font-weight: bold;
   }
 
-  #is-moderator-form {
+  #is-admin-form {
     display: inline-flex;
     align-items: center;
     bottom: 0;
@@ -214,10 +220,6 @@
     font-weight: 500;
     flex: 1;
     min-width: 8ch;
-  }
-
-  #gamecode + input {
-    flex: 0.15;
   }
 
   #username {
