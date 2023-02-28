@@ -1,7 +1,7 @@
 // Package hrt implements a type-safe HTTP router. It aids in creating a uniform
 // API interface while making it easier to create API handlers.
 //
-// HRT stands for HTTP router typed.
+// HRT stands for (H)TTP (r)outer with (t)ypes.
 package hrt
 
 import (
