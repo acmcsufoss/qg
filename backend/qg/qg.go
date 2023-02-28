@@ -18,8 +18,26 @@ type Command struct {
 	//  - [CommandJeopardyPressButton] (JeopardyPressButton)
 	//  - [CommandJoinGame] (JoinGame)
 	Value valueCommand
+}
 
-	t string
+// Type returns the discriminator value for the current type.
+func (v Command) Type() string {
+	switch v.Value.(type) {
+	case CommandBeginGame:
+		return "BeginGame"
+	case CommandEndGame:
+		return "EndGame"
+	case CommandJeopardyChooseQuestion:
+		return "JeopardyChooseQuestion"
+	case CommandJeopardyPlayerJudgment:
+		return "JeopardyPlayerJudgment"
+	case CommandJeopardyPressButton:
+		return "JeopardyPressButton"
+	case CommandJoinGame:
+		return "JoinGame"
+	default:
+		panic("unreachable")
+	}
 }
 
 func (v Command) MarshalJSON() ([]byte, error) {
@@ -96,14 +114,13 @@ func (v *Command) UnmarshalJSON(b []byte) error {
 		err = json.Unmarshal(b, &v)
 		value = v
 	default:
-		err = fmt.Errorf("bad Type value: %s", t.T)
+		err = fmt.Errorf("Command: bad type value: %q", t.T)
 	}
 
 	if err != nil {
 		return err
 	}
 
-	v.t = t.T
 	v.Value = value
 	return nil
 }
@@ -187,8 +204,32 @@ type Event struct {
 	//  - [EventJoinedGame] (JoinedGame)
 	//  - [EventPlayerJoined] (PlayerJoined)
 	Value valueEvent
+}
 
-	t string
+// Type returns the discriminator value for the current type.
+func (v Event) Type() string {
+	switch v.Value.(type) {
+	case EventError:
+		return "Error"
+	case EventGameEnded:
+		return "GameEnded"
+	case EventGameStarted:
+		return "GameStarted"
+	case EventJeopardyBeginQuestion:
+		return "JeopardyBeginQuestion"
+	case EventJeopardyButtonPressed:
+		return "JeopardyButtonPressed"
+	case EventJeopardyResumeButton:
+		return "JeopardyResumeButton"
+	case EventJeopardyTurnEnded:
+		return "JeopardyTurnEnded"
+	case EventJoinedGame:
+		return "JoinedGame"
+	case EventPlayerJoined:
+		return "PlayerJoined"
+	default:
+		panic("unreachable")
+	}
 }
 
 func (v Event) MarshalJSON() ([]byte, error) {
@@ -292,14 +333,13 @@ func (v *Event) UnmarshalJSON(b []byte) error {
 		err = json.Unmarshal(b, &v)
 		value = v
 	default:
-		err = fmt.Errorf("bad Type value: %s", t.T)
+		err = fmt.Errorf("Event: bad type value: %q", t.T)
 	}
 
 	if err != nil {
 		return err
 	}
 
-	v.t = t.T
 	v.Value = value
 	return nil
 }
@@ -393,8 +433,18 @@ type GameData struct {
 	//  - [GameDataJeopardy] (jeopardy)
 	//  - [GameDataKahoot] (kahoot)
 	Value valueGameData
+}
 
-	t string
+// Game returns the discriminator value for the current type.
+func (v GameData) Game() string {
+	switch v.Value.(type) {
+	case GameDataJeopardy:
+		return "jeopardy"
+	case GameDataKahoot:
+		return "kahoot"
+	default:
+		panic("unreachable")
+	}
 }
 
 func (v GameData) MarshalJSON() ([]byte, error) {
@@ -435,14 +485,13 @@ func (v *GameData) UnmarshalJSON(b []byte) error {
 		err = json.Unmarshal(b, &v)
 		value = v
 	default:
-		err = fmt.Errorf("bad Game value: %s", t.T)
+		err = fmt.Errorf("GameData: bad game value: %q", t.T)
 	}
 
 	if err != nil {
 		return err
 	}
 
-	v.t = t.T
 	v.Value = value
 	return nil
 }
@@ -470,8 +519,16 @@ type GameInfo struct {
 	// Value can be the following types:
 	//  - [GameInfoJeopardy] (jeopardy)
 	Value valueGameInfo
+}
 
-	t string
+// Type returns the discriminator value for the current type.
+func (v GameInfo) Type() string {
+	switch v.Value.(type) {
+	case GameInfoJeopardy:
+		return "jeopardy"
+	default:
+		panic("unreachable")
+	}
 }
 
 func (v GameInfo) MarshalJSON() ([]byte, error) {
@@ -503,14 +560,13 @@ func (v *GameInfo) UnmarshalJSON(b []byte) error {
 		err = json.Unmarshal(b, &v)
 		value = v
 	default:
-		err = fmt.Errorf("bad Type value: %s", t.T)
+		err = fmt.Errorf("GameInfo: bad type value: %q", t.T)
 	}
 
 	if err != nil {
 		return err
 	}
 
-	v.t = t.T
 	v.Value = value
 	return nil
 }

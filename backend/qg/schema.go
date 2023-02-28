@@ -7,7 +7,9 @@ import (
 
 	_ "embed"
 
+	"github.com/davecgh/go-spew/spew"
 	jtd "github.com/jsontypedef/json-typedef-go"
+	"github.com/pkg/errors"
 )
 
 // Schema is the JSON Typedef schema for the qg package.
@@ -54,7 +56,15 @@ func Validate(name string, v any) error {
 	}
 	vschema.Definitions = Schema.Definitions
 
-	errors, err := jtd.Validate(vschema, v,
+	// Dogshit code to make the validator happy.
+	m, err := asJSONMap(v)
+	if err != nil {
+		return errors.Wrap(err, "marshaling value to JSON")
+	}
+
+	spew.Dump(m)
+
+	errors, err := jtd.Validate(vschema, m,
 		jtd.WithMaxDepth(100),
 		jtd.WithMaxErrors(1))
 	if err != nil {
@@ -66,4 +76,18 @@ func Validate(name string, v any) error {
 	}
 
 	return TypeValidationError(errors[0])
+}
+
+func asJSONMap(v any) (map[string]any, error) {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return nil, err
+	}
+
+	var m map[string]any
+	if err := json.Unmarshal(b, &m); err != nil {
+		return nil, err
+	}
+
+	return m, nil
 }

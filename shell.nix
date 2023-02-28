@@ -15,11 +15,20 @@ let overlay = self: super:
 			if super ? go_1_20
 			then super.go_1_20
 			else nixpkgs_go_1_20.go_1_20;
+		buildGoModule = super.buildGoModule.override {
+			go = self.go;
+		};
 	};
 
-in { pkgs ? import <nixpkgs> { overlays = [ overlay ]; } }:
+in { pkgs ? import <nixpkgs> {} }:
 
 let lib = pkgs.lib;
+
+	pkgs_go_1_20 = import <nixpkgs> { overlays = [ overlay ]; };
+
+	_ = if lib.versionAtLeast pkgs.go.version "1.20"
+		then pkgs.go
+		else builtins.throw "go version is too old";
 
 	fetchPatchFromGitHub = { owner, repo, rev, sha256 }:
 		pkgs.fetchpatch {
@@ -99,8 +108,8 @@ let lib = pkgs.lib;
 			(fetchPatchFromGitHub {
 				owner  = "diamondburned";
 				repo   = "json-typedef-codegen";
-				rev    = "dcbba615d8a0a398eef6675670dbe0ea7d3e3a8e";
-				sha256 = "1zb5fd4d9d5lxq7shcj0vkw4bqxw308pyhf25d6y67rgnkslmgx4";
+				rev    = "20ec19d73aa24c36655e78e3c63a20cdf82ee62c";
+				sha256 = "1sd38y7i5fnhm40rpcc3gafsbp71angvn9fjwkc33pswk2zrajah";
 			})
 			(fetchPatchFromGitHub {
 				owner  = "diamondburned";
@@ -125,22 +134,26 @@ let lib = pkgs.lib;
 		in pkgs.callPackage "${src}/nix" { };
 
 in pkgs.mkShell {
-	buildInputs = with pkgs; [
-		go
-		gopls
-		goapi-gen
-		goose
-		sqlc
-		pgformatter
-		nixos-shell # for local PostgreSQL server
-		nodejs
-		yq-go
-		yajsv
-		jsonnet
-		jtd-codegen
-		jsonnet-language-server
-		caddy
-	];
+	buildInputs =
+		(with pkgs_go_1_20; [
+			go
+			gopls
+			gotools
+		]) ++
+		(with pkgs; [
+			goapi-gen
+			goose
+			sqlc
+			pgformatter
+			nixos-shell # for local PostgreSQL server
+			nodejs
+			yq-go
+			yajsv
+			jsonnet
+			jtd-codegen
+			jsonnet-language-server
+			caddy
+		]);
 
 	shellHook = ''
 		PATH="$PWD/node_modules/.bin:$PATH"
