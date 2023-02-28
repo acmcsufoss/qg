@@ -2,9 +2,12 @@ package cando
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"log"
 	"reflect"
+
+	"github.com/davecgh/go-spew/spew"
+	"github.com/pkg/errors"
 )
 
 // StatefulContext is a type that holds a value of type T in any
@@ -54,17 +57,19 @@ type NextState struct {
 // the given State.
 func Next[T any]() NextState {
 	var z T
-	return NextState{reflect.TypeOf(z)}
+	return NextState{
+		nextType: reflect.TypeOf(z),
+	}
 }
 
 // EndReaction is a special type that indicates to the machine that the function
 // is meant to react to the end of the state machine.
 type EndReaction struct{}
 
-// Reactor describes a function that reacts to a change in state. The previous
+// React describes a function that reacts to a change in state. The previous
 // and next types will describe the state that was left and the state that was
 // entered, respectively.
-func Reactor[PrevT, NextT any](f func(ctx context.Context, prev PrevT, next NextT) error) AnyReactor {
+func React[PrevT, NextT any](f func(ctx context.Context, prev PrevT) error) AnyReactor {
 	var prevZ PrevT
 	var nextZ NextT
 	return reactor[PrevT, NextT]{
@@ -77,14 +82,14 @@ func Reactor[PrevT, NextT any](f func(ctx context.Context, prev PrevT, next Next
 }
 
 type reactor[PrevT, NextT any] struct {
-	f func(ctx context.Context, prev PrevT, next NextT) error
+	f func(ctx context.Context, prev PrevT) error
 	t [2]reflect.Type
 }
 
 // AnyReactor is an interface that any reactor will implement.
 type AnyReactor interface {
 	dataTypes() [2]reflect.Type
-	react(ctx context.Context, prev, next interface{}, machine *Machine) error
+	react(ctx context.Context, prev any, machine *Machine) error
 }
 
 var _ AnyReactor = reactor[any, any]{}
@@ -93,8 +98,8 @@ func (r reactor[PrevT, NextT]) dataTypes() [2]reflect.Type {
 	return r.t
 }
 
-func (r reactor[PrevT, NextT]) react(ctx context.Context, prev, next interface{}, _ *Machine) error {
-	return r.f(ctx, prev.(PrevT), next.(NextT))
+func (r reactor[PrevT, NextT]) react(ctx context.Context, prev any, _ *Machine) error {
+	return r.f(ctx, prev.(PrevT))
 }
 
 // State creates a state in the FSM.
@@ -158,12 +163,12 @@ type stateIdentifier string
 // Machine represents a Finite State Machine, which can have one State active at
 // a time.
 type Machine struct {
-	current AnyState
-	next    NextStates
+	current     AnyState
+	currentData any
+	next        NextStates
 
-	state    map[reflect.Type]AnyState
-	reactors map[[2]reflect.Type][]AnyReactor
-	data     MachineData
+	state map[reflect.Type]AnyState
+	data  MachineData
 }
 
 // NewMachine creates a new FSM and returns it.
@@ -173,19 +178,15 @@ func NewMachine(data MachineData) *Machine {
 	}
 
 	mac := &Machine{
-		state:    make(map[reflect.Type]AnyState, len(data.States)),
-		reactors: make(map[[2]reflect.Type][]AnyReactor, len(data.Reactors)),
-		data:     data,
+		state: make(map[reflect.Type]AnyState, len(data.States)),
+		data:  data,
 	}
 
 	for _, state := range data.States {
 		mac.state[state.dataType()] = state
 	}
 
-	for _, reactor := range data.Reactors {
-		k := reactor.dataTypes()
-		mac.reactors[k] = append(mac.reactors[k], reactor)
-	}
+	spew.Dump(data.Reactors)
 
 	return mac
 }
@@ -195,15 +196,49 @@ func (f *Machine) enter(ctx context.Context, do func() error) (err error) {
 		return err
 	}
 
-	if f.data.LeaveMachine != nil {
-		defer func() {
-			if innerErr := f.data.LeaveMachine(ctx); innerErr != nil && err == nil {
-				err = innerErr
-			}
-		}()
+	if err = do(); err != nil {
+		f.data.LeaveMachine(ctx)
+		return err
 	}
 
-	err = do()
+	if f.data.LeaveMachine != nil {
+		if innerErr := f.data.LeaveMachine(ctx); innerErr != nil && err == nil {
+			err = innerErr
+		}
+	}
+
+	prev := f.current.dataType()
+
+	nexts := make([]reflect.Type, len(f.next))
+	for i, next := range f.next {
+		nexts[i] = next.nextType
+	}
+
+reactorMatch:
+	for _, reactor := range f.data.Reactors {
+		types := reactor.dataTypes()
+
+		if types[0] != nil {
+			if prev == nil || !prev.AssignableTo(types[0]) {
+				continue reactorMatch
+			}
+		}
+
+		if types[1] != nil {
+			for _, t := range nexts {
+				if !t.AssignableTo(types[1]) {
+					continue reactorMatch
+				}
+				break
+			}
+		}
+
+		log.Printf("calling %v", types)
+		if err := reactor.react(ctx, f.currentData, f); err != nil {
+			return errors.Wrapf(err, "error reacting to %v", types)
+		}
+	}
+
 	return
 }
 
@@ -250,7 +285,13 @@ func (f *Machine) Change(ctx context.Context, data any) (err error) {
 		}
 
 		f.current = next
+		f.currentData = data
+
 		f.next = nextNexts
+		if f.next == nil {
+			f.next = []NextState{{nextType: reflect.TypeOf(EndReaction{})}}
+		}
+
 		return err
 	})
 }
