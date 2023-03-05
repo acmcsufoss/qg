@@ -6,7 +6,7 @@ import "context"
 type GameStorer interface {
 	// CreateGame creates a new game using the given game data. The new game ID
 	// is returned.
-	CreateGame(context.Context, GameData) (GameID, error)
+	CreateGame(context.Context, IGameData) (GameID, error)
 	// SetGamePassword sets the admin password for the given game. Users
 	// that connect to the game with the given password will be considered
 	// admins.

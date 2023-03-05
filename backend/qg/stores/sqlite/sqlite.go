@@ -4,16 +4,29 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
+	"strings"
 
 	"github.com/pkg/errors"
 	"oss.acmcsuf.com/qg/backend/qg"
 	"oss.acmcsuf.com/qg/backend/qg/games/jeopardy"
 	"oss.acmcsuf.com/qg/backend/qg/stores/sqlite/sqlitec"
 
+	_ "embed"
+
 	_ "modernc.org/sqlite"
 )
 
 //go:generate sqlc generate
+
+//go:embed schema.sql
+var schema string
+
+// Migrations returns migrations of the schema. The first migration is the
+// initial schema.
+func Migrations() []string {
+	return strings.Split(schema, "-- MIGRATE --")
+}
 
 // https://cj.rs/blog/sqlite-pragma-cheatsheet-for-performance-and-consistency/
 
@@ -51,6 +64,22 @@ func New(url string) (*Store, error) {
 		return nil, errors.Wrap(err, "failed to set pragma")
 	}
 
+	var version int
+	if err := db.QueryRow("PRAGMA user_version").Scan(&version); err != nil {
+		return nil, errors.Wrap(err, "failed to get user_version")
+	}
+
+	migrations := Migrations()
+	for i := version; i < len(migrations); i++ {
+		if _, err := db.Exec(migrations[i]); err != nil {
+			return nil, errors.Wrap(err, "failed to migrate")
+		}
+	}
+
+	if _, err := db.Exec(fmt.Sprintf("PRAGMA user_version = %d", len(migrations))); err != nil {
+		return nil, errors.Wrap(err, "failed to set user_version")
+	}
+
 	return &Store{
 		db: db,
 		q:  sqlitec.New(db),
@@ -65,10 +94,10 @@ func (s *Store) Close() error {
 	return s.db.Close()
 }
 
-func (s *Store) CreateGame(ctx context.Context, data qg.GameData) (qg.GameID, error) {
+func (s *Store) CreateGame(ctx context.Context, data qg.IGameData) (qg.GameID, error) {
 	id := qg.GenerateGameID()
 
-	b, err := json.Marshal(data)
+	b, err := json.Marshal(qg.GameData{Value: data})
 	if err != nil {
 		return "", errors.Wrap(err, "cannot encode data")
 	}

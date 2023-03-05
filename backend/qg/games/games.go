@@ -4,14 +4,14 @@ import (
 	"context"
 	"sync"
 
-	"oss.acmcsuf.com/qg/backend/qg"
 	"github.com/pkg/errors"
+	"oss.acmcsuf.com/qg/backend/qg"
 )
 
 // GameCreator describes a game manager that can create a new game.
 type GameCreator interface {
 	// CreateGame creates a new game.
-	CreateGame(ctx context.Context, id qg.GameID, data qg.GameData) (qg.CommandHandlerFactory, error)
+	CreateGame(ctx context.Context, id qg.GameID, data qg.IGameData) (qg.CommandHandlerFactory, error)
 }
 
 // Manager manages games and the creation of new games.
@@ -48,7 +48,7 @@ func (g *Manager) AddGame(t qg.GameType, game GameCreator) {
 
 // CreateGame creates a new game. The game will be created in the database and
 // the game ID will be returned.
-func (g *Manager) CreateGame(ctx context.Context, data qg.GameData) (qg.GameID, error) {
+func (g *Manager) CreateGame(ctx context.Context, data qg.IGameData) (qg.GameID, error) {
 	gameType := qg.GameTypeFromData(data)
 
 	g.gamesMut.RLock()
@@ -77,22 +77,22 @@ func (g *Manager) CreateGame(ctx context.Context, data qg.GameData) (qg.GameID, 
 }
 
 // NewCommandHandler creates a new command handler.
-func (g *Manager) NewCommandHandler(ctx context.Context, evs chan<- qg.Event) (qg.CommandHandler, error) {
+func (g *Manager) NewCommandHandler(ctx context.Context, evs chan<- qg.IEvent) (qg.CommandHandler, error) {
 	return &gameHandler{g, nil, evs}, nil
 }
 
 type gameHandler struct {
 	gm  *Manager
 	gg  qg.CommandHandler
-	evs chan<- qg.Event
+	evs chan<- qg.IEvent
 }
 
-func (h *gameHandler) HandleCommand(ctx context.Context, cmd qg.Command) (err error) {
+func (h *gameHandler) HandleCommand(ctx context.Context, cmd qg.ICommand) (err error) {
 	if h.gg != nil {
 		return h.gg.HandleCommand(ctx, cmd)
 	}
 
-	switch data := cmd.Value.(type) {
+	switch data := cmd.(type) {
 	case qg.CommandJoinGame:
 		h.gm.gamesMut.RLock()
 		game, ok := h.gm.games[data.GameID]

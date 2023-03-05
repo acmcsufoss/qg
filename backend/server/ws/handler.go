@@ -36,7 +36,7 @@ func NewHandler(hfac qg.CommandHandlerFactory) *Handler {
 // stopped.
 func (h *Handler) Stop() {
 	h.srvs.Range(func(k, _ any) bool {
-		ch := k.(chan qg.Event)
+		ch := k.(chan qg.IEvent)
 		close(ch)
 		return true
 	})

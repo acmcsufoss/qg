@@ -3,6 +3,8 @@ module oss.acmcsuf.com/qg
 go 1.20
 
 require (
+	github.com/alecthomas/assert/v2 v2.2.1
+	github.com/davecgh/go-spew v1.1.0
 	github.com/diamondburned/listener v0.0.0-20220315064222-63f8ebce5f60
 	github.com/go-chi/chi/v5 v5.0.8
 	github.com/gorilla/websocket v1.5.0
@@ -13,8 +15,10 @@ require (
 )
 
 require (
+	github.com/alecthomas/repr v0.2.0 // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
+	github.com/hexops/gotextdiff v1.0.3 // indirect
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
 	github.com/mattn/go-isatty v0.0.16 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20200410134404-eec4a21b6bb0 // indirect

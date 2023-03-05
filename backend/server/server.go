@@ -5,13 +5,13 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
+	"github.com/pkg/errors"
 	"oss.acmcsuf.com/qg/backend/internal/hrt"
 	"oss.acmcsuf.com/qg/backend/qg"
 	"oss.acmcsuf.com/qg/backend/qg/games"
 	"oss.acmcsuf.com/qg/backend/qg/games/jeopardy"
 	"oss.acmcsuf.com/qg/backend/server/ws"
-	"github.com/go-chi/chi/v5"
-	"github.com/pkg/errors"
 )
 
 // Storer is a storage interface for the server.
@@ -88,7 +88,7 @@ func (h *apiHandler) getGame(ctx context.Context, body qg.RequestGetGame) (qg.Re
 }
 
 func (h *apiHandler) postGame(ctx context.Context, body qg.RequestNewGame) (qg.ResponseNewGame, error) {
-	gameID, err := h.gameManager.CreateGame(ctx, body.Data)
+	gameID, err := h.gameManager.CreateGame(ctx, body.Data.Value)
 	if err != nil {
 		return qg.ResponseNewGame{}, err
 	}
@@ -99,7 +99,7 @@ func (h *apiHandler) postGame(ctx context.Context, body qg.RequestNewGame) (qg.R
 
 	return qg.ResponseNewGame{
 		GameID:   gameID,
-		GameType: qg.GameTypeFromData(body.Data),
+		GameType: qg.GameTypeFromData(body.Data.Value),
 	}, nil
 }
 

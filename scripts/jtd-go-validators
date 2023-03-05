@@ -14,24 +14,33 @@ generate() {
 	echo "package $package"
 	echo
 
-	defns=( $(jq -r '
-		.definitions
-			| to_entries
-			| .[]
-			| select(.value.properties or .value.discriminator)
-			| .key
-		' < $schemaFile) )
+	IFS=$'\n' defns=( $(filterDefns ".value.properties or .value.discriminator") )
 	for defn in "${defns[@]}"; do
 		if except "$defn"; then
 			continue
 		fi
-		echo "// Validate validates the $defn object. It implements the"
-		echo "// Validator interface."
-		echo "func (v *$defn) Validate() error {"
-		echo "	return Validate(\"$defn\", v)"
-		echo "}"
-		echo
+		generateDefn "$defn"
 	done
+}
+
+filterDefns() {
+	jq -r "
+		.definitions
+			| to_entries
+			| .[]
+			| select($1)
+			| .key
+		" < $schemaFile
+}
+
+generateDefn() {
+	local defn="$1"
+	echo "// Validate validates the $defn object. It implements the"
+	echo "// Validator interface."
+	echo "func (v *$defn) Validate() error {"
+	echo "	return Validate(\"$defn\", v)"
+	echo "}"
+	echo
 }
 
 except() {

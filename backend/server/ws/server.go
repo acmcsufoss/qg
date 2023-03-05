@@ -37,7 +37,7 @@ func (h serverHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	ch := make(chan qg.Event, 16)
+	ch := make(chan qg.IEvent, 16)
 
 	h.root.srvs.Store(ch, struct{}{})
 	defer h.root.srvs.Delete(ch)
@@ -74,7 +74,7 @@ func (h serverHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // server is a websocket server.
 type server struct {
 	ws     *websocket.Conn
-	ev     chan qg.Event
+	ev     chan qg.IEvent
 	cancel context.CancelCauseFunc
 }
 
@@ -92,12 +92,10 @@ func (s *server) commandLoop(ctx context.Context, cmdh qg.CommandHandler) {
 			return
 		}
 
-		if err := cmdh.HandleCommand(ctx, cmd); err != nil {
-			event := qg.Event{
-				Value: qg.EventError{
-					Error: qg.Error{
-						Message: err.Error(),
-					},
+		if err := cmdh.HandleCommand(ctx, cmd.Value); err != nil {
+			event := qg.EventError{
+				Error: qg.Error{
+					Message: err.Error(),
 				},
 			}
 

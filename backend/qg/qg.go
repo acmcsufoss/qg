@@ -10,71 +10,11 @@ import (
 type Qg = interface{}
 
 type Command struct {
-	// Value can be the following types:
-	//  - [CommandBeginGame] (BeginGame)
-	//  - [CommandEndGame] (EndGame)
-	//  - [CommandJeopardyChooseQuestion] (JeopardyChooseQuestion)
-	//  - [CommandJeopardyPlayerJudgment] (JeopardyPlayerJudgment)
-	//  - [CommandJeopardyPressButton] (JeopardyPressButton)
-	//  - [CommandJoinGame] (JoinGame)
-	Value valueCommand
-}
-
-// Type returns the discriminator value for the current type.
-func (v Command) Type() string {
-	switch v.Value.(type) {
-	case CommandBeginGame:
-		return "BeginGame"
-	case CommandEndGame:
-		return "EndGame"
-	case CommandJeopardyChooseQuestion:
-		return "JeopardyChooseQuestion"
-	case CommandJeopardyPlayerJudgment:
-		return "JeopardyPlayerJudgment"
-	case CommandJeopardyPressButton:
-		return "JeopardyPressButton"
-	case CommandJoinGame:
-		return "JoinGame"
-	default:
-		panic("unreachable")
-	}
+	Value ICommand `json:"-"`
 }
 
 func (v Command) MarshalJSON() ([]byte, error) {
-	switch value := v.Value.(type) {
-	case CommandBeginGame:
-		return json.Marshal(struct {
-			T string `json:"type"`
-			CommandBeginGame
-		}{"BeginGame", value})
-	case CommandEndGame:
-		return json.Marshal(struct {
-			T string `json:"type"`
-			CommandEndGame
-		}{"EndGame", value})
-	case CommandJeopardyChooseQuestion:
-		return json.Marshal(struct {
-			T string `json:"type"`
-			CommandJeopardyChooseQuestion
-		}{"JeopardyChooseQuestion", value})
-	case CommandJeopardyPlayerJudgment:
-		return json.Marshal(struct {
-			T string `json:"type"`
-			CommandJeopardyPlayerJudgment
-		}{"JeopardyPlayerJudgment", value})
-	case CommandJeopardyPressButton:
-		return json.Marshal(struct {
-			T string `json:"type"`
-			CommandJeopardyPressButton
-		}{"JeopardyPressButton", value})
-	case CommandJoinGame:
-		return json.Marshal(struct {
-			T string `json:"type"`
-			CommandJoinGame
-		}{"JoinGame", value})
-	default:
-		panic("unreachable")
-	}
+	return json.Marshal(v.Value)
 }
 
 func (v *Command) UnmarshalJSON(b []byte) error {
@@ -85,7 +25,7 @@ func (v *Command) UnmarshalJSON(b []byte) error {
 		return err
 	}
 
-	var value valueCommand
+	var value ICommand
 	var err error
 
 	switch t.T {
@@ -125,9 +65,26 @@ func (v *Command) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-type valueCommand interface {
+// ICommand is an interface type that Command types implement.
+// It can be the following types:
+//
+// - [CommandBeginGame] (BeginGame)
+// - [CommandEndGame] (EndGame)
+// - [CommandJeopardyChooseQuestion] (JeopardyChooseQuestion)
+// - [CommandJeopardyPlayerJudgment] (JeopardyPlayerJudgment)
+// - [CommandJeopardyPressButton] (JeopardyPressButton)
+// - [CommandJoinGame] (JoinGame)
+type ICommand interface {
+	Type() string
 	isCommand()
 }
+
+func (CommandBeginGame) Type() string              { return "BeginGame" }
+func (CommandEndGame) Type() string                { return "EndGame" }
+func (CommandJeopardyChooseQuestion) Type() string { return "JeopardyChooseQuestion" }
+func (CommandJeopardyPlayerJudgment) Type() string { return "JeopardyPlayerJudgment" }
+func (CommandJeopardyPressButton) Type() string    { return "JeopardyPressButton" }
+func (CommandJoinGame) Type() string               { return "JoinGame" }
 
 func (CommandBeginGame) isCommand()              {}
 func (CommandEndGame) isCommand()                {}
@@ -135,6 +92,186 @@ func (CommandJeopardyChooseQuestion) isCommand() {}
 func (CommandJeopardyPlayerJudgment) isCommand() {}
 func (CommandJeopardyPressButton) isCommand()    {}
 func (CommandJoinGame) isCommand()               {}
+
+func (v CommandBeginGame) MarshalJSON() ([]byte, error) {
+	type Alias CommandBeginGame
+	return json.Marshal(struct {
+		T string `json:"type"`
+		Alias
+	}{
+		v.Type(),
+		Alias(v),
+	})
+}
+
+func (v *CommandBeginGame) UnmarshalJSON(b []byte) error {
+	type Alias CommandBeginGame
+	var a struct {
+		T string `json:"type"`
+		Alias
+	}
+
+	if err := json.Unmarshal(b, &a); err != nil {
+		return err
+	}
+
+	if a.T != "BeginGame" {
+		return fmt.Errorf("CommandBeginGame: bad type value: %q", a.T)
+	}
+
+	*v = CommandBeginGame(a.Alias)
+	return nil
+}
+
+func (v CommandEndGame) MarshalJSON() ([]byte, error) {
+	type Alias CommandEndGame
+	return json.Marshal(struct {
+		T string `json:"type"`
+		Alias
+	}{
+		v.Type(),
+		Alias(v),
+	})
+}
+
+func (v *CommandEndGame) UnmarshalJSON(b []byte) error {
+	type Alias CommandEndGame
+	var a struct {
+		T string `json:"type"`
+		Alias
+	}
+
+	if err := json.Unmarshal(b, &a); err != nil {
+		return err
+	}
+
+	if a.T != "EndGame" {
+		return fmt.Errorf("CommandEndGame: bad type value: %q", a.T)
+	}
+
+	*v = CommandEndGame(a.Alias)
+	return nil
+}
+
+func (v CommandJeopardyChooseQuestion) MarshalJSON() ([]byte, error) {
+	type Alias CommandJeopardyChooseQuestion
+	return json.Marshal(struct {
+		T string `json:"type"`
+		Alias
+	}{
+		v.Type(),
+		Alias(v),
+	})
+}
+
+func (v *CommandJeopardyChooseQuestion) UnmarshalJSON(b []byte) error {
+	type Alias CommandJeopardyChooseQuestion
+	var a struct {
+		T string `json:"type"`
+		Alias
+	}
+
+	if err := json.Unmarshal(b, &a); err != nil {
+		return err
+	}
+
+	if a.T != "JeopardyChooseQuestion" {
+		return fmt.Errorf("CommandJeopardyChooseQuestion: bad type value: %q", a.T)
+	}
+
+	*v = CommandJeopardyChooseQuestion(a.Alias)
+	return nil
+}
+
+func (v CommandJeopardyPlayerJudgment) MarshalJSON() ([]byte, error) {
+	type Alias CommandJeopardyPlayerJudgment
+	return json.Marshal(struct {
+		T string `json:"type"`
+		Alias
+	}{
+		v.Type(),
+		Alias(v),
+	})
+}
+
+func (v *CommandJeopardyPlayerJudgment) UnmarshalJSON(b []byte) error {
+	type Alias CommandJeopardyPlayerJudgment
+	var a struct {
+		T string `json:"type"`
+		Alias
+	}
+
+	if err := json.Unmarshal(b, &a); err != nil {
+		return err
+	}
+
+	if a.T != "JeopardyPlayerJudgment" {
+		return fmt.Errorf("CommandJeopardyPlayerJudgment: bad type value: %q", a.T)
+	}
+
+	*v = CommandJeopardyPlayerJudgment(a.Alias)
+	return nil
+}
+
+func (v CommandJeopardyPressButton) MarshalJSON() ([]byte, error) {
+	type Alias CommandJeopardyPressButton
+	return json.Marshal(struct {
+		T string `json:"type"`
+		Alias
+	}{
+		v.Type(),
+		Alias(v),
+	})
+}
+
+func (v *CommandJeopardyPressButton) UnmarshalJSON(b []byte) error {
+	type Alias CommandJeopardyPressButton
+	var a struct {
+		T string `json:"type"`
+		Alias
+	}
+
+	if err := json.Unmarshal(b, &a); err != nil {
+		return err
+	}
+
+	if a.T != "JeopardyPressButton" {
+		return fmt.Errorf("CommandJeopardyPressButton: bad type value: %q", a.T)
+	}
+
+	*v = CommandJeopardyPressButton(a.Alias)
+	return nil
+}
+
+func (v CommandJoinGame) MarshalJSON() ([]byte, error) {
+	type Alias CommandJoinGame
+	return json.Marshal(struct {
+		T string `json:"type"`
+		Alias
+	}{
+		v.Type(),
+		Alias(v),
+	})
+}
+
+func (v *CommandJoinGame) UnmarshalJSON(b []byte) error {
+	type Alias CommandJoinGame
+	var a struct {
+		T string `json:"type"`
+		Alias
+	}
+
+	if err := json.Unmarshal(b, &a); err != nil {
+		return err
+	}
+
+	if a.T != "JoinGame" {
+		return fmt.Errorf("CommandJoinGame: bad type value: %q", a.T)
+	}
+
+	*v = CommandJoinGame(a.Alias)
+	return nil
+}
 
 // CommandBeginGame is sent by a client to begin a game.
 type CommandBeginGame struct {
@@ -155,6 +292,7 @@ type CommandEndGame struct {
 // choose the question.
 type CommandJeopardyChooseQuestion struct {
 	Category int32 `json:"category"`
+
 	Question int32 `json:"question"`
 }
 
@@ -180,8 +318,10 @@ type CommandJeopardyPressButton struct {
 type CommandJoinGame struct {
 	// adminPassword is the password of the admin of the game.
 	AdminPassword *string `json:"adminPassword"`
+
 	// gameID is the ID of the game to join.
 	GameID GameID `json:"gameID"`
+
 	// playerName is the wanted name of the user.
 	PlayerName PlayerName `json:"playerName"`
 }
@@ -193,95 +333,11 @@ type Error struct {
 }
 
 type Event struct {
-	// Value can be the following types:
-	//  - [EventError] (Error)
-	//  - [EventGameEnded] (GameEnded)
-	//  - [EventGameStarted] (GameStarted)
-	//  - [EventJeopardyBeginQuestion] (JeopardyBeginQuestion)
-	//  - [EventJeopardyButtonPressed] (JeopardyButtonPressed)
-	//  - [EventJeopardyResumeButton] (JeopardyResumeButton)
-	//  - [EventJeopardyTurnEnded] (JeopardyTurnEnded)
-	//  - [EventJoinedGame] (JoinedGame)
-	//  - [EventPlayerJoined] (PlayerJoined)
-	Value valueEvent
-}
-
-// Type returns the discriminator value for the current type.
-func (v Event) Type() string {
-	switch v.Value.(type) {
-	case EventError:
-		return "Error"
-	case EventGameEnded:
-		return "GameEnded"
-	case EventGameStarted:
-		return "GameStarted"
-	case EventJeopardyBeginQuestion:
-		return "JeopardyBeginQuestion"
-	case EventJeopardyButtonPressed:
-		return "JeopardyButtonPressed"
-	case EventJeopardyResumeButton:
-		return "JeopardyResumeButton"
-	case EventJeopardyTurnEnded:
-		return "JeopardyTurnEnded"
-	case EventJoinedGame:
-		return "JoinedGame"
-	case EventPlayerJoined:
-		return "PlayerJoined"
-	default:
-		panic("unreachable")
-	}
+	Value IEvent `json:"-"`
 }
 
 func (v Event) MarshalJSON() ([]byte, error) {
-	switch value := v.Value.(type) {
-	case EventError:
-		return json.Marshal(struct {
-			T string `json:"type"`
-			EventError
-		}{"Error", value})
-	case EventGameEnded:
-		return json.Marshal(struct {
-			T string `json:"type"`
-			EventGameEnded
-		}{"GameEnded", value})
-	case EventGameStarted:
-		return json.Marshal(struct {
-			T string `json:"type"`
-			EventGameStarted
-		}{"GameStarted", value})
-	case EventJeopardyBeginQuestion:
-		return json.Marshal(struct {
-			T string `json:"type"`
-			EventJeopardyBeginQuestion
-		}{"JeopardyBeginQuestion", value})
-	case EventJeopardyButtonPressed:
-		return json.Marshal(struct {
-			T string `json:"type"`
-			EventJeopardyButtonPressed
-		}{"JeopardyButtonPressed", value})
-	case EventJeopardyResumeButton:
-		return json.Marshal(struct {
-			T string `json:"type"`
-			EventJeopardyResumeButton
-		}{"JeopardyResumeButton", value})
-	case EventJeopardyTurnEnded:
-		return json.Marshal(struct {
-			T string `json:"type"`
-			EventJeopardyTurnEnded
-		}{"JeopardyTurnEnded", value})
-	case EventJoinedGame:
-		return json.Marshal(struct {
-			T string `json:"type"`
-			EventJoinedGame
-		}{"JoinedGame", value})
-	case EventPlayerJoined:
-		return json.Marshal(struct {
-			T string `json:"type"`
-			EventPlayerJoined
-		}{"PlayerJoined", value})
-	default:
-		panic("unreachable")
-	}
+	return json.Marshal(v.Value)
 }
 
 func (v *Event) UnmarshalJSON(b []byte) error {
@@ -292,7 +348,7 @@ func (v *Event) UnmarshalJSON(b []byte) error {
 		return err
 	}
 
-	var value valueEvent
+	var value IEvent
 	var err error
 
 	switch t.T {
@@ -344,9 +400,32 @@ func (v *Event) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-type valueEvent interface {
+// IEvent is an interface type that Event types implement.
+// It can be the following types:
+//
+// - [EventError] (Error)
+// - [EventGameEnded] (GameEnded)
+// - [EventGameStarted] (GameStarted)
+// - [EventJeopardyBeginQuestion] (JeopardyBeginQuestion)
+// - [EventJeopardyButtonPressed] (JeopardyButtonPressed)
+// - [EventJeopardyResumeButton] (JeopardyResumeButton)
+// - [EventJeopardyTurnEnded] (JeopardyTurnEnded)
+// - [EventJoinedGame] (JoinedGame)
+// - [EventPlayerJoined] (PlayerJoined)
+type IEvent interface {
+	Type() string
 	isEvent()
 }
+
+func (EventError) Type() string                 { return "Error" }
+func (EventGameEnded) Type() string             { return "GameEnded" }
+func (EventGameStarted) Type() string           { return "GameStarted" }
+func (EventJeopardyBeginQuestion) Type() string { return "JeopardyBeginQuestion" }
+func (EventJeopardyButtonPressed) Type() string { return "JeopardyButtonPressed" }
+func (EventJeopardyResumeButton) Type() string  { return "JeopardyResumeButton" }
+func (EventJeopardyTurnEnded) Type() string     { return "JeopardyTurnEnded" }
+func (EventJoinedGame) Type() string            { return "JoinedGame" }
+func (EventPlayerJoined) Type() string          { return "PlayerJoined" }
 
 func (EventError) isEvent()                 {}
 func (EventGameEnded) isEvent()             {}
@@ -357,6 +436,276 @@ func (EventJeopardyResumeButton) isEvent()  {}
 func (EventJeopardyTurnEnded) isEvent()     {}
 func (EventJoinedGame) isEvent()            {}
 func (EventPlayerJoined) isEvent()          {}
+
+func (v EventError) MarshalJSON() ([]byte, error) {
+	type Alias EventError
+	return json.Marshal(struct {
+		T string `json:"type"`
+		Alias
+	}{
+		v.Type(),
+		Alias(v),
+	})
+}
+
+func (v *EventError) UnmarshalJSON(b []byte) error {
+	type Alias EventError
+	var a struct {
+		T string `json:"type"`
+		Alias
+	}
+
+	if err := json.Unmarshal(b, &a); err != nil {
+		return err
+	}
+
+	if a.T != "Error" {
+		return fmt.Errorf("EventError: bad type value: %q", a.T)
+	}
+
+	*v = EventError(a.Alias)
+	return nil
+}
+
+func (v EventGameEnded) MarshalJSON() ([]byte, error) {
+	type Alias EventGameEnded
+	return json.Marshal(struct {
+		T string `json:"type"`
+		Alias
+	}{
+		v.Type(),
+		Alias(v),
+	})
+}
+
+func (v *EventGameEnded) UnmarshalJSON(b []byte) error {
+	type Alias EventGameEnded
+	var a struct {
+		T string `json:"type"`
+		Alias
+	}
+
+	if err := json.Unmarshal(b, &a); err != nil {
+		return err
+	}
+
+	if a.T != "GameEnded" {
+		return fmt.Errorf("EventGameEnded: bad type value: %q", a.T)
+	}
+
+	*v = EventGameEnded(a.Alias)
+	return nil
+}
+
+func (v EventGameStarted) MarshalJSON() ([]byte, error) {
+	type Alias EventGameStarted
+	return json.Marshal(struct {
+		T string `json:"type"`
+		Alias
+	}{
+		v.Type(),
+		Alias(v),
+	})
+}
+
+func (v *EventGameStarted) UnmarshalJSON(b []byte) error {
+	type Alias EventGameStarted
+	var a struct {
+		T string `json:"type"`
+		Alias
+	}
+
+	if err := json.Unmarshal(b, &a); err != nil {
+		return err
+	}
+
+	if a.T != "GameStarted" {
+		return fmt.Errorf("EventGameStarted: bad type value: %q", a.T)
+	}
+
+	*v = EventGameStarted(a.Alias)
+	return nil
+}
+
+func (v EventJeopardyBeginQuestion) MarshalJSON() ([]byte, error) {
+	type Alias EventJeopardyBeginQuestion
+	return json.Marshal(struct {
+		T string `json:"type"`
+		Alias
+	}{
+		v.Type(),
+		Alias(v),
+	})
+}
+
+func (v *EventJeopardyBeginQuestion) UnmarshalJSON(b []byte) error {
+	type Alias EventJeopardyBeginQuestion
+	var a struct {
+		T string `json:"type"`
+		Alias
+	}
+
+	if err := json.Unmarshal(b, &a); err != nil {
+		return err
+	}
+
+	if a.T != "JeopardyBeginQuestion" {
+		return fmt.Errorf("EventJeopardyBeginQuestion: bad type value: %q", a.T)
+	}
+
+	*v = EventJeopardyBeginQuestion(a.Alias)
+	return nil
+}
+
+func (v EventJeopardyButtonPressed) MarshalJSON() ([]byte, error) {
+	type Alias EventJeopardyButtonPressed
+	return json.Marshal(struct {
+		T string `json:"type"`
+		Alias
+	}{
+		v.Type(),
+		Alias(v),
+	})
+}
+
+func (v *EventJeopardyButtonPressed) UnmarshalJSON(b []byte) error {
+	type Alias EventJeopardyButtonPressed
+	var a struct {
+		T string `json:"type"`
+		Alias
+	}
+
+	if err := json.Unmarshal(b, &a); err != nil {
+		return err
+	}
+
+	if a.T != "JeopardyButtonPressed" {
+		return fmt.Errorf("EventJeopardyButtonPressed: bad type value: %q", a.T)
+	}
+
+	*v = EventJeopardyButtonPressed(a.Alias)
+	return nil
+}
+
+func (v EventJeopardyResumeButton) MarshalJSON() ([]byte, error) {
+	type Alias EventJeopardyResumeButton
+	return json.Marshal(struct {
+		T string `json:"type"`
+		Alias
+	}{
+		v.Type(),
+		Alias(v),
+	})
+}
+
+func (v *EventJeopardyResumeButton) UnmarshalJSON(b []byte) error {
+	type Alias EventJeopardyResumeButton
+	var a struct {
+		T string `json:"type"`
+		Alias
+	}
+
+	if err := json.Unmarshal(b, &a); err != nil {
+		return err
+	}
+
+	if a.T != "JeopardyResumeButton" {
+		return fmt.Errorf("EventJeopardyResumeButton: bad type value: %q", a.T)
+	}
+
+	*v = EventJeopardyResumeButton(a.Alias)
+	return nil
+}
+
+func (v EventJeopardyTurnEnded) MarshalJSON() ([]byte, error) {
+	type Alias EventJeopardyTurnEnded
+	return json.Marshal(struct {
+		T string `json:"type"`
+		Alias
+	}{
+		v.Type(),
+		Alias(v),
+	})
+}
+
+func (v *EventJeopardyTurnEnded) UnmarshalJSON(b []byte) error {
+	type Alias EventJeopardyTurnEnded
+	var a struct {
+		T string `json:"type"`
+		Alias
+	}
+
+	if err := json.Unmarshal(b, &a); err != nil {
+		return err
+	}
+
+	if a.T != "JeopardyTurnEnded" {
+		return fmt.Errorf("EventJeopardyTurnEnded: bad type value: %q", a.T)
+	}
+
+	*v = EventJeopardyTurnEnded(a.Alias)
+	return nil
+}
+
+func (v EventJoinedGame) MarshalJSON() ([]byte, error) {
+	type Alias EventJoinedGame
+	return json.Marshal(struct {
+		T string `json:"type"`
+		Alias
+	}{
+		v.Type(),
+		Alias(v),
+	})
+}
+
+func (v *EventJoinedGame) UnmarshalJSON(b []byte) error {
+	type Alias EventJoinedGame
+	var a struct {
+		T string `json:"type"`
+		Alias
+	}
+
+	if err := json.Unmarshal(b, &a); err != nil {
+		return err
+	}
+
+	if a.T != "JoinedGame" {
+		return fmt.Errorf("EventJoinedGame: bad type value: %q", a.T)
+	}
+
+	*v = EventJoinedGame(a.Alias)
+	return nil
+}
+
+func (v EventPlayerJoined) MarshalJSON() ([]byte, error) {
+	type Alias EventPlayerJoined
+	return json.Marshal(struct {
+		T string `json:"type"`
+		Alias
+	}{
+		v.Type(),
+		Alias(v),
+	})
+}
+
+func (v *EventPlayerJoined) UnmarshalJSON(b []byte) error {
+	type Alias EventPlayerJoined
+	var a struct {
+		T string `json:"type"`
+		Alias
+	}
+
+	if err := json.Unmarshal(b, &a); err != nil {
+		return err
+	}
+
+	if a.T != "PlayerJoined" {
+		return fmt.Errorf("EventPlayerJoined: bad type value: %q", a.T)
+	}
+
+	*v = EventPlayerJoined(a.Alias)
+	return nil
+}
 
 type EventError struct {
 	Error Error `json:"error"`
@@ -380,10 +729,13 @@ type EventGameStarted struct {
 // within the game data. Note that a question may repeat across multiple
 // categories.
 type EventJeopardyBeginQuestion struct {
-	Category int32      `json:"category"`
-	Chooser  PlayerName `json:"chooser"`
-	Points   float32    `json:"points"`
-	Question string     `json:"question"`
+	Category int32 `json:"category"`
+
+	Chooser PlayerName `json:"chooser"`
+
+	Points float32 `json:"points"`
+
+	Question string `json:"question"`
 }
 
 // EventJeopardyButtonPressed is emitted when any player had pressed a button
@@ -407,7 +759,8 @@ type EventJeopardyResumeButton struct {
 // EventJeopardyTurnEnded is emitted when a turn ends or when the game first
 // starts.
 type EventJeopardyTurnEnded struct {
-	Chooser     PlayerName  `json:"chooser"`
+	Chooser PlayerName `json:"chooser"`
+
 	Leaderboard Leaderboard `json:"leaderboard"`
 }
 
@@ -417,9 +770,12 @@ type EventJeopardyTurnEnded struct {
 // joins the current game.
 type EventJoinedGame struct {
 	GameData *GameData `json:"gameData"`
-	GameID   string    `json:"gameID"`
-	GameInfo GameInfo  `json:"gameInfo"`
-	IsAdmin  bool      `json:"isAdmin"`
+
+	GameID string `json:"gameID"`
+
+	GameInfo GameInfo `json:"gameInfo"`
+
+	IsAdmin bool `json:"isAdmin"`
 }
 
 // EventPlayerJoined is emitted when a player joins the current game.
@@ -429,39 +785,11 @@ type EventPlayerJoined struct {
 
 // GameData is the game data. It contains all the information about the game.
 type GameData struct {
-	// Value can be the following types:
-	//  - [GameDataJeopardy] (jeopardy)
-	//  - [GameDataKahoot] (kahoot)
-	Value valueGameData
-}
-
-// Game returns the discriminator value for the current type.
-func (v GameData) Game() string {
-	switch v.Value.(type) {
-	case GameDataJeopardy:
-		return "jeopardy"
-	case GameDataKahoot:
-		return "kahoot"
-	default:
-		panic("unreachable")
-	}
+	Value IGameData `json:"-"`
 }
 
 func (v GameData) MarshalJSON() ([]byte, error) {
-	switch value := v.Value.(type) {
-	case GameDataJeopardy:
-		return json.Marshal(struct {
-			T string `json:"game"`
-			GameDataJeopardy
-		}{"jeopardy", value})
-	case GameDataKahoot:
-		return json.Marshal(struct {
-			T string `json:"game"`
-			GameDataKahoot
-		}{"kahoot", value})
-	default:
-		panic("unreachable")
-	}
+	return json.Marshal(v.Value)
 }
 
 func (v *GameData) UnmarshalJSON(b []byte) error {
@@ -472,7 +800,7 @@ func (v *GameData) UnmarshalJSON(b []byte) error {
 		return err
 	}
 
-	var value valueGameData
+	var value IGameData
 	var err error
 
 	switch t.T {
@@ -496,12 +824,81 @@ func (v *GameData) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-type valueGameData interface {
+// IGameData is an interface type that GameData types implement.
+// It can be the following types:
+//
+// - [GameDataJeopardy] (jeopardy)
+// - [GameDataKahoot] (kahoot)
+type IGameData interface {
+	Game() string
 	isGameData()
 }
 
+func (GameDataJeopardy) Game() string { return "jeopardy" }
+func (GameDataKahoot) Game() string   { return "kahoot" }
+
 func (GameDataJeopardy) isGameData() {}
 func (GameDataKahoot) isGameData()   {}
+
+func (v GameDataJeopardy) MarshalJSON() ([]byte, error) {
+	type Alias GameDataJeopardy
+	return json.Marshal(struct {
+		T string `json:"game"`
+		Alias
+	}{
+		v.Game(),
+		Alias(v),
+	})
+}
+
+func (v *GameDataJeopardy) UnmarshalJSON(b []byte) error {
+	type Alias GameDataJeopardy
+	var a struct {
+		T string `json:"game"`
+		Alias
+	}
+
+	if err := json.Unmarshal(b, &a); err != nil {
+		return err
+	}
+
+	if a.T != "jeopardy" {
+		return fmt.Errorf("GameDataJeopardy: bad game value: %q", a.T)
+	}
+
+	*v = GameDataJeopardy(a.Alias)
+	return nil
+}
+
+func (v GameDataKahoot) MarshalJSON() ([]byte, error) {
+	type Alias GameDataKahoot
+	return json.Marshal(struct {
+		T string `json:"game"`
+		Alias
+	}{
+		v.Game(),
+		Alias(v),
+	})
+}
+
+func (v *GameDataKahoot) UnmarshalJSON(b []byte) error {
+	type Alias GameDataKahoot
+	var a struct {
+		T string `json:"game"`
+		Alias
+	}
+
+	if err := json.Unmarshal(b, &a); err != nil {
+		return err
+	}
+
+	if a.T != "kahoot" {
+		return fmt.Errorf("GameDataKahoot: bad game value: %q", a.T)
+	}
+
+	*v = GameDataKahoot(a.Alias)
+	return nil
+}
 
 type GameDataJeopardy struct {
 	Data JeopardyGameData `json:"data"`
@@ -516,31 +913,11 @@ type GameDataKahoot struct {
 type GameID = string
 
 type GameInfo struct {
-	// Value can be the following types:
-	//  - [GameInfoJeopardy] (jeopardy)
-	Value valueGameInfo
-}
-
-// Type returns the discriminator value for the current type.
-func (v GameInfo) Type() string {
-	switch v.Value.(type) {
-	case GameInfoJeopardy:
-		return "jeopardy"
-	default:
-		panic("unreachable")
-	}
+	Value IGameInfo `json:"-"`
 }
 
 func (v GameInfo) MarshalJSON() ([]byte, error) {
-	switch value := v.Value.(type) {
-	case GameInfoJeopardy:
-		return json.Marshal(struct {
-			T string `json:"type"`
-			GameInfoJeopardy
-		}{"jeopardy", value})
-	default:
-		panic("unreachable")
-	}
+	return json.Marshal(v.Value)
 }
 
 func (v *GameInfo) UnmarshalJSON(b []byte) error {
@@ -551,7 +928,7 @@ func (v *GameInfo) UnmarshalJSON(b []byte) error {
 		return err
 	}
 
-	var value valueGameInfo
+	var value IGameInfo
 	var err error
 
 	switch t.T {
@@ -571,11 +948,48 @@ func (v *GameInfo) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-type valueGameInfo interface {
+// IGameInfo is an interface type that GameInfo types implement.
+// It can be the following types:
+//
+// - [GameInfoJeopardy] (jeopardy)
+type IGameInfo interface {
+	Type() string
 	isGameInfo()
 }
 
+func (GameInfoJeopardy) Type() string { return "jeopardy" }
+
 func (GameInfoJeopardy) isGameInfo() {}
+
+func (v GameInfoJeopardy) MarshalJSON() ([]byte, error) {
+	type Alias GameInfoJeopardy
+	return json.Marshal(struct {
+		T string `json:"type"`
+		Alias
+	}{
+		v.Type(),
+		Alias(v),
+	})
+}
+
+func (v *GameInfoJeopardy) UnmarshalJSON(b []byte) error {
+	type Alias GameInfoJeopardy
+	var a struct {
+		T string `json:"type"`
+		Alias
+	}
+
+	if err := json.Unmarshal(b, &a); err != nil {
+		return err
+	}
+
+	if a.T != "jeopardy" {
+		return fmt.Errorf("GameInfoJeopardy: bad type value: %q", a.T)
+	}
+
+	*v = GameInfoJeopardy(a.Alias)
+	return nil
+}
 
 type GameInfoJeopardy struct {
 	Data JeopardyGameInfo `json:"data"`
@@ -585,13 +999,15 @@ type GameType string
 
 const (
 	GameTypeJeopardy GameType = "jeopardy"
-	GameTypeKahoot   GameType = "kahoot"
+
+	GameTypeKahoot GameType = "kahoot"
 )
 
 // JeopardyCategory is a category in a Jeopardy game.
 type JeopardyCategory struct {
 	// name is the name of the category.
 	Name string `json:"name"`
+
 	// questions are the questions in the category.
 	Questions []JeopardyQuestion `json:"questions"`
 }
@@ -599,6 +1015,7 @@ type JeopardyCategory struct {
 // JeopardyGameData is the game data for a Jeopardy game.
 type JeopardyGameData struct {
 	Categories []JeopardyCategory `json:"categories"`
+
 	// score_multiplier is the score multiplier for each question. The
 	// default is 100.
 	ScoreMultiplier *float32 `json:"score_multiplier,omitempty"`
@@ -608,9 +1025,11 @@ type JeopardyGameData struct {
 // contains no useful information about the entire game data, so it's used to
 // send to players the first time they join.
 type JeopardyGameInfo struct {
-	Categories      []string `json:"categories"`
-	NumQuestions    int32    `json:"numQuestions"`
-	ScoreMultiplier float32  `json:"scoreMultiplier"`
+	Categories []string `json:"categories"`
+
+	NumQuestions int32 `json:"numQuestions"`
+
+	ScoreMultiplier float32 `json:"scoreMultiplier"`
 }
 
 // JeopardyQuestion is a question in a Jeopardy game.
@@ -623,6 +1042,7 @@ type JeopardyQuestion struct {
 type KahootGameData struct {
 	// questions are the questions in the game.
 	Questions []KahootQuestion `json:"questions"`
+
 	// time_limit is the time limit for each question. The format is in
 	// Go's time.Duration, e.g. 10s for 10 seconds.
 	TimeLimit string `json:"time_limit"`
@@ -632,6 +1052,7 @@ type KahootGameData struct {
 type KahootQuestion struct {
 	// answers are the possible answers.
 	Answers []string `json:"answers"`
+
 	// question is the question.
 	Question string `json:"question"`
 }
@@ -640,8 +1061,9 @@ type KahootQuestion struct {
 type Leaderboard = []LeaderboardEntry
 
 type LeaderboardEntry struct {
-	PlayerName string  `json:"playerName"`
-	Score      float32 `json:"score"`
+	PlayerName string `json:"playerName"`
+
+	Score float32 `json:"score"`
 }
 
 // PlayerName is the name of a player.
@@ -656,8 +1078,9 @@ type RequestGetJeopardyGame struct {
 }
 
 type RequestNewGame struct {
-	AdminPassword string   `json:"admin_password"`
-	Data          GameData `json:"data"`
+	AdminPassword string `json:"admin_password"`
+
+	Data GameData `json:"data"`
 }
 
 type ResponseGetGame struct {
@@ -669,6 +1092,7 @@ type ResponseGetJeopardyGame struct {
 }
 
 type ResponseNewGame struct {
-	GameID   string   `json:"gameID"`
+	GameID string `json:"gameID"`
+
 	GameType GameType `json:"gameType"`
 }

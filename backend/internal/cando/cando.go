@@ -3,10 +3,8 @@ package cando
 import (
 	"context"
 	"fmt"
-	"log"
 	"reflect"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/pkg/errors"
 )
 
@@ -90,6 +88,23 @@ type reactor[PrevT, NextT any] struct {
 type AnyReactor interface {
 	dataTypes() [2]reflect.Type
 	react(ctx context.Context, prev any, machine *Machine) error
+}
+
+// JoinReactors flattens the given reactors list (or reactors) into a single
+// list.
+func JoinReactors(reactors ...any) []AnyReactor {
+	var out []AnyReactor
+	for _, r := range reactors {
+		switch r := r.(type) {
+		case []AnyReactor:
+			out = append(out, r...)
+		case AnyReactor:
+			out = append(out, r)
+		default:
+			panic(fmt.Sprintf("unexpected reactor type: %T", r))
+		}
+	}
+	return out
 }
 
 var _ AnyReactor = reactor[any, any]{}
@@ -186,8 +201,6 @@ func NewMachine(data MachineData) *Machine {
 		mac.state[state.dataType()] = state
 	}
 
-	spew.Dump(data.Reactors)
-
 	return mac
 }
 
@@ -233,7 +246,6 @@ reactorMatch:
 			}
 		}
 
-		log.Printf("calling %v", types)
 		if err := reactor.react(ctx, f.currentData, f); err != nil {
 			return errors.Wrapf(err, "error reacting to %v", types)
 		}

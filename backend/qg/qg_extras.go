@@ -48,18 +48,17 @@ func GenerateGameID() GameID {
 }
 
 // GameTypeFromData returns the game type from the given game data.
-func GameTypeFromData(data GameData) GameType {
-	var gameType GameType
-	// TODO: add body.Data.Type().
-	switch data.Value.(type) {
+func GameTypeFromData(data IGameData) GameType {
+	return GameType(data.Game())
+}
+
+func GameInfoFromData(data IGameData) IGameInfo {
+	switch data := data.(type) {
 	case GameDataJeopardy:
-		gameType = GameTypeJeopardy
-	case GameDataKahoot:
-		gameType = GameTypeKahoot
+		return GameInfoJeopardy{ConvertJeopardyGameData(data.Data)}
 	default:
-		panic("unreachable")
+		panic("unknown game type")
 	}
-	return gameType
 }
 
 // PlayerNameRegex is the regex used to validate player names.
@@ -103,10 +102,17 @@ func ConvertJeopardyGameData(data JeopardyGameData) JeopardyGameInfo {
 		categories[i] = c.Name
 	}
 
+	var scoreMultiplier float32
+	if data.ScoreMultiplier != nil {
+		scoreMultiplier = *data.ScoreMultiplier
+	} else {
+		scoreMultiplier = 100
+	}
+
 	return JeopardyGameInfo{
 		Categories:      categories,
 		NumQuestions:    int32(len(data.Categories[0].Questions)),
-		ScoreMultiplier: *data.ScoreMultiplier,
+		ScoreMultiplier: scoreMultiplier,
 	}
 }
 
@@ -130,7 +136,13 @@ func (data JeopardyGameData) QuestionAt(categoryIx, questionIx int32) (*Jeopardy
 
 // QuestionPoints returns the points for the given question.
 func (data JeopardyGameData) QuestionPoints(questionIx int32) float32 {
-	return *data.ScoreMultiplier * float32(questionIx+1)
+	var multiplier float32
+	if data.ScoreMultiplier != nil {
+		multiplier = float32(*data.ScoreMultiplier)
+	} else {
+		multiplier = 100
+	}
+	return multiplier * float32(questionIx+1)
 }
 
 // TotalQuestions returns the total number of questions in the game.

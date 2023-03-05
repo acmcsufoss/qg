@@ -22,13 +22,11 @@ var (
 	sqlitePath = "/tmp/qg.sqlite"
 )
 
-func init() {
+func main() {
 	flag.StringVar(&addr, "addr", addr, "address to listen on")
 	flag.StringVar(&sqlitePath, "sqlite", sqlitePath, "path to SQLite database")
 	flag.Parse()
-}
 
-func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 
@@ -38,10 +36,7 @@ func main() {
 	}
 	defer store.Close()
 
-	gameManager := games.NewManager(store)
-	gameManager.AddGame(qg.GameTypeJeopardy, jeopardy.New(store))
-
-	handler := server.NewHandler(store, gameManager)
+	handler := newHandler(store)
 	defer handler.Close()
 
 	r := chi.NewRouter()
@@ -56,4 +51,11 @@ func main() {
 	if err := listener.HTTPListenAndServeCtx(ctx, &server); err != nil {
 		log.Fatalln("server:", err)
 	}
+}
+
+func newHandler(store *sqlite.Store) server.HTTPHandlerCloser {
+	gameManager := games.NewManager(store)
+	gameManager.AddGame(qg.GameTypeJeopardy, jeopardy.New(store))
+
+	return server.NewHandler(store, gameManager)
 }

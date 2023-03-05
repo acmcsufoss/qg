@@ -17,39 +17,50 @@ func NewPublisher() *Publisher {
 	return &Publisher{}
 }
 
+type subscribable struct {
+	publisher *Publisher
+	channel   chan<- qg.IEvent
+}
+
 // Subscribe implements the Subscriber interface.
-func (p *Publisher) Subscribe(ctx context.Context, out chan<- qg.Event) error {
-	p.subs.Store(out, struct{}{})
-	return nil
+func (p *Publisher) Subscribe(out chan<- qg.IEvent) {
+	p.subs.Store(subscribable{channel: out}, struct{}{})
 }
 
 // Unsubscribe implements the Subscriber interface.
-func (p *Publisher) Unsubscribe(ctx context.Context, out chan<- qg.Event) error {
-	p.subs.Delete(out)
-	return nil
+func (p *Publisher) Unsubscribe(out chan<- qg.IEvent) {
+	p.subs.Delete(subscribable{channel: out})
+}
+
+// SubscribePublisher subscribes the given publisher to the publisher.
+func (p *Publisher) SubscribePublisher(given *Publisher) {
+	p.subs.Store(subscribable{publisher: given}, struct{}{})
+}
+
+// UnsubscribePublisher unsubscribes the given publisher from the publisher.
+func (p *Publisher) UnsubscribePublisher(given *Publisher) {
+	p.subs.Delete(subscribable{publisher: given})
 }
 
 // Publish implements the Publisher interface.
-func (p *Publisher) Publish(ctx context.Context, msg qg.Event) error {
-	p.subs.Range(func(key, _ any) bool {
-		k := key.(chan<- qg.Event)
-		select {
-		case <-ctx.Done():
-			return false
-		case k <- msg:
-			return true
-		default:
-			p.subs.Delete(k)
-			return true
-		}
-	})
-	return nil
-}
+func (p *Publisher) Publish(ctx context.Context, msg qg.IEvent) {
+	p.subs.Range(func(k, _ any) bool {
+		s := k.(subscribable)
 
-// CopyTo copies all event channels from the publisher to the given publisher.
-func (p *Publisher) CopyTo(other *Publisher) {
-	p.subs.Range(func(key, _ any) bool {
-		other.subs.Store(key, struct{}{})
+		switch {
+		case s.publisher != nil:
+			s.publisher.Publish(ctx, msg)
+		case s.channel != nil:
+			select {
+			case <-ctx.Done():
+				return false
+			case s.channel <- msg:
+				// ok
+			default:
+				p.subs.Delete(k)
+			}
+		}
+
 		return true
 	})
 }
