@@ -753,8 +753,9 @@ type EventJeopardyResumeButton struct {
 // EventJeopardyTurnEnded is emitted when a turn ends or when the game first
 // starts.
 type EventJeopardyTurnEnded struct {
-	Chooser     PlayerName  `json:"chooser"`
-	Leaderboard Leaderboard `json:"leaderboard"`
+	Answered    JeopardyAnsweredQuestions `json:"answered"`
+	Chooser     PlayerName                `json:"chooser"`
+	Leaderboard Leaderboard               `json:"leaderboard"`
 }
 
 // EventJoinedGame is emitted when the current player joins a game. It is a
@@ -991,6 +992,15 @@ const (
 	GameTypeJeopardy GameType = "jeopardy"
 	GameTypeKahoot   GameType = "kahoot"
 )
+
+type JeopardyAnsweredQuestion struct {
+	Category int32      `json:"category"`
+	Player   PlayerName `json:"player"`
+	Question int32      `json:"question"`
+}
+
+// JeopardyAnsweredQuestions is the list of answered questions for a player.
+type JeopardyAnsweredQuestions = []JeopardyAnsweredQuestion
 
 // JeopardyCategory is a category in a Jeopardy game.
 type JeopardyCategory struct {

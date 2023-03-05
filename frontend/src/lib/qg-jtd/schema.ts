@@ -180,6 +180,9 @@ export default {
               "EventJeopardyTurnEnded is emitted when a turn ends or when the game first\nstarts.\n",
           },
           properties: {
+            answered: {
+              ref: "JeopardyAnsweredQuestions",
+            },
             chooser: {
               ref: "PlayerName",
             },
@@ -266,6 +269,25 @@ export default {
     },
     GameType: {
       enum: ["jeopardy", "kahoot"],
+    },
+    JeopardyAnsweredQuestions: {
+      elements: {
+        properties: {
+          category: {
+            type: "int32",
+          },
+          player: {
+            ref: "PlayerName",
+          },
+          question: {
+            type: "int32",
+          },
+        },
+      },
+      metadata: {
+        description:
+          "JeopardyAnsweredQuestions is the list of answered questions for a player.\n",
+      },
     },
     JeopardyCategory: {
       metadata: {

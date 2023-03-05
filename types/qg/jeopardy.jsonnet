@@ -76,4 +76,17 @@ local schema = import '../lib/schema.jsonnet';
       scoreMultiplier: schema.float,
     }),
   ),
+
+  JeopardyAnsweredQuestions: schema.description(
+    |||
+      JeopardyAnsweredQuestions is the list of answered questions for a player.
+    |||,
+    schema.arrayOf(
+      schema.properties({
+        category: schema.integer,
+        question: schema.integer,
+        player: schema.ref('PlayerName'),
+      }),
+    ),
+  ),
 }

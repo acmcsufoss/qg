@@ -33,7 +33,7 @@ func New(store Storer) Game {
 type GameState struct {
 	PlayerScores         map[qg.PlayerName]float32
 	PlayerAlreadyPressed map[qg.PlayerName]bool
-	AnsweredQuestions    map[[2]int32]qg.PlayerName
+	AnsweredQuestions    qg.JeopardyAnsweredQuestions
 	ChoosingPlayer       qg.PlayerName
 	AnsweringPlayer      qg.PlayerName
 	CurrentCategory      int32
@@ -46,11 +46,13 @@ type PlayerState struct {
 	AlreadyPressed bool
 }
 
-func newGameState() *GameState {
+func newGameState(data qg.JeopardyGameData) *GameState {
 	return &GameState{
-		AnsweredQuestions: make(map[[2]int32]qg.PlayerName),
-		CurrentCategory:   -1,
-		CurrentQuestion:   -1,
+		PlayerScores:         make(map[qg.PlayerName]float32),
+		PlayerAlreadyPressed: make(map[qg.PlayerName]bool),
+		AnsweredQuestions:    qg.JeopardyAnsweredQuestions{},
+		CurrentCategory:      -1,
+		CurrentQuestion:      -1,
 	}
 }
 
@@ -69,7 +71,7 @@ func newGameManager(store Storer, id qg.GameID, data qg.JeopardyGameData, mstate
 	return &gameManager{
 		pubsub:  pubsub.NewPublisher(),
 		storer:  store,
-		state:   newGameState(),
+		state:   newGameState(data),
 		machine: mstate,
 		data:    data,
 		id:      id,
@@ -101,8 +103,11 @@ func (m *gameManager) Leaderboard() qg.Leaderboard {
 
 func (m *gameManager) BeginGame(ctx context.Context) (cando.NextStates, error) {
 	// Pick a random player to start.
-	for name := range m.machine.Players {
-		m.state.ChoosingPlayer = name
+	for _, player := range m.machine.Players {
+		if player.IsAdmin {
+			continue
+		}
+		m.state.ChoosingPlayer = player.Name
 		break
 	}
 
@@ -158,6 +163,7 @@ func (g Game) CreateGame(ctx context.Context, id qg.GameID, data qg.IGameData) (
 		cando.React[any, qg.CommandJeopardyChooseQuestion](func(ctx context.Context, _ any) error {
 			s.Publish(ctx, qg.EventJeopardyTurnEnded{
 				Chooser:     m.state.ChoosingPlayer,
+				Answered:    m.state.AnsweredQuestions,
 				Leaderboard: m.Leaderboard(),
 			})
 			return nil
@@ -232,8 +238,6 @@ func (g Game) CreateGame(ctx context.Context, id qg.GameID, data qg.IGameData) (
 				return nil, errors.New("only admins can judge players")
 			}
 
-			questionPos := [2]int32{m.state.CurrentCategory, m.state.CurrentQuestion}
-
 			if cmd.Correct {
 				// Correct, so reward points and move on to the next
 				// question.
@@ -241,13 +245,11 @@ func (g Game) CreateGame(ctx context.Context, id qg.GameID, data qg.IGameData) (
 				m.state.PlayerScores[m.state.AnsweringPlayer] += pts
 
 				// Mark the question as answered.
-				m.state.AnsweredQuestions[questionPos] = m.state.AnsweringPlayer
-				m.state.ChoosingPlayer = m.state.AnsweringPlayer
-			} else {
-				// No one answered correctly, so we don't mark the name.
-				// Keep the same answering player, but move on to the next
-				// question.
-				m.state.AnsweredQuestions[questionPos] = ""
+				m.state.AnsweredQuestions = append(m.state.AnsweredQuestions, qg.JeopardyAnsweredQuestion{
+					Player:   m.state.AnsweringPlayer,
+					Question: m.state.CurrentQuestion,
+					Category: m.state.CurrentCategory,
+				})
 			}
 
 			return m.moveToNextTurn(ctx, false)

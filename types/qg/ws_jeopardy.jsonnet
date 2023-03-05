@@ -7,6 +7,7 @@ local schema = import '../lib/schema.jsonnet';
     |||,
     schema.properties({
       leaderboard: schema.ref('Leaderboard'),
+      answered: schema.ref('JeopardyAnsweredQuestions'),
       chooser: schema.ref('PlayerName'),
     }),
   ),

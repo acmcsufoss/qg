@@ -169,6 +169,7 @@ func TestJeopardyWebsocket(t *testing.T) {
 
 				turn := expectEvent[qg.EventJeopardyTurnEnded](ctx, t, ws)
 				assert.Equal(t, turn.Chooser, "Player 1")
+				assert.Equal(t, turn.Answered, qg.JeopardyAnsweredQuestions{})
 			},
 		},
 		{
@@ -178,10 +179,120 @@ func TestJeopardyWebsocket(t *testing.T) {
 
 				turn := expectEvent[qg.EventJeopardyTurnEnded](ctx, t, ws)
 				assert.Equal(t, turn.Chooser, "Player 1")
+				assert.Equal(t, turn.Answered, qg.JeopardyAnsweredQuestions{})
 
 				sendCommand(ctx, t, ws, qg.CommandJeopardyChooseQuestion{
 					Category: 0,
 					Question: 0,
+				})
+
+				question := expectEvent[qg.EventJeopardyBeginQuestion](ctx, t, ws)
+				assert.Equal(t, question.Category, 0)
+				assert.Equal(t, question.Question, "1")
+				assert.Equal(t, question.Points, 100)
+			},
+		},
+		{
+			who: "admin",
+			act: func(t *testing.T, ctx context.Context, ws *west.WebsocketTest) {
+				question := expectEvent[qg.EventJeopardyBeginQuestion](ctx, t, ws)
+				assert.Equal(t, question.Category, 0)
+				assert.Equal(t, question.Question, "1")
+				assert.Equal(t, question.Points, 100)
+			},
+		},
+		{
+			who: "player 1",
+			act: func(t *testing.T, ctx context.Context, ws *west.WebsocketTest) {
+				sendCommand(ctx, t, ws, qg.CommandJeopardyPressButton{})
+
+				press := expectEvent[qg.EventJeopardyButtonPressed](ctx, t, ws)
+				assert.Equal(t, press.PlayerName, "Player 1")
+			},
+		},
+		{
+			who: "admin",
+			act: func(t *testing.T, ctx context.Context, ws *west.WebsocketTest) {
+				press := expectEvent[qg.EventJeopardyButtonPressed](ctx, t, ws)
+				assert.Equal(t, press.PlayerName, "Player 1")
+			},
+		},
+		{
+			who: "admin",
+			act: func(t *testing.T, ctx context.Context, ws *west.WebsocketTest) {
+				sendCommand(ctx, t, ws, qg.CommandJeopardyPlayerJudgment{
+					Correct: true,
+				})
+
+				turn := expectEvent[qg.EventJeopardyTurnEnded](ctx, t, ws)
+				assert.Equal(t, turn.Chooser, "Player 1")
+				assert.Equal(t, turn.Answered, qg.JeopardyAnsweredQuestions{
+					{Category: 0, Question: 0, Player: "Player 1"},
+				})
+			},
+		},
+		{
+			who: "player 1",
+			act: func(t *testing.T, ctx context.Context, ws *west.WebsocketTest) {
+				turn := expectEvent[qg.EventJeopardyTurnEnded](ctx, t, ws)
+				assert.Equal(t, turn.Chooser, "Player 1")
+				assert.Equal(t, turn.Answered, qg.JeopardyAnsweredQuestions{
+					{Category: 0, Question: 0, Player: "Player 1"},
+				})
+
+				sendCommand(ctx, t, ws, qg.CommandJeopardyChooseQuestion{
+					Category: 1,
+					Question: 1,
+				})
+
+				question := expectEvent[qg.EventJeopardyBeginQuestion](ctx, t, ws)
+				assert.Equal(t, question.Category, 1)
+				assert.Equal(t, question.Question, "5")
+				assert.Equal(t, question.Points, 200)
+			},
+		},
+		{
+			who: "admin",
+			act: func(t *testing.T, ctx context.Context, ws *west.WebsocketTest) {
+				question := expectEvent[qg.EventJeopardyBeginQuestion](ctx, t, ws)
+				assert.Equal(t, question.Category, 1)
+				assert.Equal(t, question.Question, "5")
+				assert.Equal(t, question.Points, 200)
+			},
+		},
+		{
+			who: "player 1",
+			act: func(t *testing.T, ctx context.Context, ws *west.WebsocketTest) {
+				sendCommand(ctx, t, ws, qg.CommandJeopardyPressButton{})
+
+				press := expectEvent[qg.EventJeopardyButtonPressed](ctx, t, ws)
+				assert.Equal(t, press.PlayerName, "Player 1")
+			},
+		},
+		{
+			who: "admin",
+			act: func(t *testing.T, ctx context.Context, ws *west.WebsocketTest) {
+				press := expectEvent[qg.EventJeopardyButtonPressed](ctx, t, ws)
+				assert.Equal(t, press.PlayerName, "Player 1")
+
+				sendCommand(ctx, t, ws, qg.CommandJeopardyPlayerJudgment{
+					Correct: false,
+				})
+
+				turn := expectEvent[qg.EventJeopardyTurnEnded](ctx, t, ws)
+				assert.Equal(t, turn.Chooser, "Player 1")
+				assert.Equal(t, turn.Answered, qg.JeopardyAnsweredQuestions{
+					{Category: 0, Question: 0, Player: "Player 1"},
+				})
+			},
+		},
+		{
+			who: "player 1",
+			act: func(t *testing.T, ctx context.Context, ws *west.WebsocketTest) {
+				turn := expectEvent[qg.EventJeopardyTurnEnded](ctx, t, ws)
+				assert.Equal(t, turn.Chooser, "Player 1")
+				assert.Equal(t, turn.Answered, qg.JeopardyAnsweredQuestions{
+					{Category: 0, Question: 0, Player: "Player 1"},
 				})
 			},
 		},
@@ -239,7 +350,8 @@ func TestJeopardyWebsocket(t *testing.T) {
 			sequencers[who] = ws
 		}
 
-		for _, sequence := range sequences {
+		for i, sequence := range sequences {
+			t.Logf("sequence %d: %s", i, sequence.who)
 			sequencer := sequencers[sequence.who]
 			sequence.act(t, ctx, sequencer)
 		}

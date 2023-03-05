@@ -179,6 +179,7 @@ export interface EventJeopardyResumeButton {
  */
 export interface EventJeopardyTurnEnded {
   type: "JeopardyTurnEnded";
+  answered: JeopardyAnsweredQuestions;
   chooser: PlayerName;
   leaderboard: Leaderboard;
 }
@@ -237,6 +238,17 @@ export enum GameType {
   Jeopardy = "jeopardy",
   Kahoot = "kahoot",
 }
+
+export interface JeopardyAnsweredQuestion {
+  category: number;
+  player: PlayerName;
+  question: number;
+}
+
+/**
+ * JeopardyAnsweredQuestions is the list of answered questions for a player.
+ */
+export type JeopardyAnsweredQuestions = JeopardyAnsweredQuestion[];
 
 /**
  * JeopardyCategory is a category in a Jeopardy game.
