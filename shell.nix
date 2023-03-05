@@ -97,31 +97,31 @@ let lib = pkgs.lib;
 		version = "0.4.1";
 
 		# TODO: push the PR and replace this.
-		src = builtins.filterSource
-			(path: type: baseNameOf path != ".git")
-			/home/diamond/Scripts/json-typedef-codegen;
+		# src = builtins.filterSource
+		# 	(path: type: baseNameOf path != ".git")
+		# 	/home/diamond/Scripts/json-typedef-codegen;
 
-		# src = pkgs.fetchFromGitHub {
-		# 	owner  = "jsontypedef";
-		# 	repo   = "json-typedef-codegen";
-		# 	rev    = "v${version}";
-		# 	sha256 = "1922k67diwrbcm6rq18pzr9627xzkv00k3y2dc4843hn25kqqha5";
-		# };
+		src = pkgs.fetchFromGitHub {
+			owner  = "jsontypedef";
+			repo   = "json-typedef-codegen";
+			rev    = "v${version}";
+			sha256 = "1922k67diwrbcm6rq18pzr9627xzkv00k3y2dc4843hn25kqqha5";
+		};
 
-		# patches = [
-		# 	(fetchPatchFromGitHub {
-		# 		owner  = "diamondburned";
-		# 		repo   = "json-typedef-codegen";
-		# 		rev    = "d769b625f6b0bd664c23d3e86fabe0e198323c01";
-		# 		sha256 = "1bm2wnmp319w47d0wk7mmrwhwnyqn11vq4p2mznmq4wy4zw3kll8";
-		# 	})
-		# 	(fetchPatchFromGitHub {
-		# 		owner  = "diamondburned";
-		# 		repo   = "json-typedef-codegen";
-		# 		rev    = "63148e9e727f1e0110d554d4eb031a734bdb60e1";
-		# 		sha256 = "16gjdz470j8zf5xlqbvs1pkvq0kpw065pbbb4jdh5yw450f9ywak";
-		# 	})
-		# ];
+		patches = [
+			(fetchPatchFromGitHub {
+				owner  = "diamondburned";
+				repo   = "json-typedef-codegen";
+				rev    = "5423dc5193e24dcaf1ab5ffe1608b1673531fc1c";
+				sha256 = "16yl9vm3zldczs67zy74bprnlzi5a30glyx627152fakvv7s810q";
+			})
+			(fetchPatchFromGitHub {
+				owner  = "diamondburned";
+				repo   = "json-typedef-codegen";
+				rev    = "63148e9e727f1e0110d554d4eb031a734bdb60e1";
+				sha256 = "16gjdz470j8zf5xlqbvs1pkvq0kpw065pbbb4jdh5yw450f9ywak";
+			})
+		];
 
 		cargoHash = "sha256:0awsvzszca60mw7l48w23fmjll092gk7px77k4f88lxxdy63c1jp";
 		# These tests need Docker for some stupid reason.

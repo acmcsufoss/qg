@@ -292,7 +292,6 @@ type CommandEndGame struct {
 // choose the question.
 type CommandJeopardyChooseQuestion struct {
 	Category int32 `json:"category"`
-
 	Question int32 `json:"question"`
 }
 
@@ -318,10 +317,8 @@ type CommandJeopardyPressButton struct {
 type CommandJoinGame struct {
 	// adminPassword is the password of the admin of the game.
 	AdminPassword *string `json:"adminPassword"`
-
 	// gameID is the ID of the game to join.
 	GameID GameID `json:"gameID"`
-
 	// playerName is the wanted name of the user.
 	PlayerName PlayerName `json:"playerName"`
 }
@@ -729,13 +726,10 @@ type EventGameStarted struct {
 // within the game data. Note that a question may repeat across multiple
 // categories.
 type EventJeopardyBeginQuestion struct {
-	Category int32 `json:"category"`
-
-	Chooser PlayerName `json:"chooser"`
-
-	Points float32 `json:"points"`
-
-	Question string `json:"question"`
+	Category int32      `json:"category"`
+	Chooser  PlayerName `json:"chooser"`
+	Points   float32    `json:"points"`
+	Question string     `json:"question"`
 }
 
 // EventJeopardyButtonPressed is emitted when any player had pressed a button
@@ -759,8 +753,7 @@ type EventJeopardyResumeButton struct {
 // EventJeopardyTurnEnded is emitted when a turn ends or when the game first
 // starts.
 type EventJeopardyTurnEnded struct {
-	Chooser PlayerName `json:"chooser"`
-
+	Chooser     PlayerName  `json:"chooser"`
 	Leaderboard Leaderboard `json:"leaderboard"`
 }
 
@@ -770,12 +763,9 @@ type EventJeopardyTurnEnded struct {
 // joins the current game.
 type EventJoinedGame struct {
 	GameData *GameData `json:"gameData"`
-
-	GameID string `json:"gameID"`
-
-	GameInfo GameInfo `json:"gameInfo"`
-
-	IsAdmin bool `json:"isAdmin"`
+	GameID   string    `json:"gameID"`
+	GameInfo GameInfo  `json:"gameInfo"`
+	IsAdmin  bool      `json:"isAdmin"`
 }
 
 // EventPlayerJoined is emitted when a player joins the current game.
@@ -999,15 +989,13 @@ type GameType string
 
 const (
 	GameTypeJeopardy GameType = "jeopardy"
-
-	GameTypeKahoot GameType = "kahoot"
+	GameTypeKahoot   GameType = "kahoot"
 )
 
 // JeopardyCategory is a category in a Jeopardy game.
 type JeopardyCategory struct {
 	// name is the name of the category.
 	Name string `json:"name"`
-
 	// questions are the questions in the category.
 	Questions []JeopardyQuestion `json:"questions"`
 }
@@ -1015,7 +1003,6 @@ type JeopardyCategory struct {
 // JeopardyGameData is the game data for a Jeopardy game.
 type JeopardyGameData struct {
 	Categories []JeopardyCategory `json:"categories"`
-
 	// score_multiplier is the score multiplier for each question. The
 	// default is 100.
 	ScoreMultiplier *float32 `json:"score_multiplier,omitempty"`
@@ -1025,11 +1012,9 @@ type JeopardyGameData struct {
 // contains no useful information about the entire game data, so it's used to
 // send to players the first time they join.
 type JeopardyGameInfo struct {
-	Categories []string `json:"categories"`
-
-	NumQuestions int32 `json:"numQuestions"`
-
-	ScoreMultiplier float32 `json:"scoreMultiplier"`
+	Categories      []string `json:"categories"`
+	NumQuestions    int32    `json:"numQuestions"`
+	ScoreMultiplier float32  `json:"scoreMultiplier"`
 }
 
 // JeopardyQuestion is a question in a Jeopardy game.
@@ -1042,7 +1027,6 @@ type JeopardyQuestion struct {
 type KahootGameData struct {
 	// questions are the questions in the game.
 	Questions []KahootQuestion `json:"questions"`
-
 	// time_limit is the time limit for each question. The format is in
 	// Go's time.Duration, e.g. 10s for 10 seconds.
 	TimeLimit string `json:"time_limit"`
@@ -1052,7 +1036,6 @@ type KahootGameData struct {
 type KahootQuestion struct {
 	// answers are the possible answers.
 	Answers []string `json:"answers"`
-
 	// question is the question.
 	Question string `json:"question"`
 }
@@ -1061,9 +1044,8 @@ type KahootQuestion struct {
 type Leaderboard = []LeaderboardEntry
 
 type LeaderboardEntry struct {
-	PlayerName string `json:"playerName"`
-
-	Score float32 `json:"score"`
+	PlayerName string  `json:"playerName"`
+	Score      float32 `json:"score"`
 }
 
 // PlayerName is the name of a player.
@@ -1078,9 +1060,8 @@ type RequestGetJeopardyGame struct {
 }
 
 type RequestNewGame struct {
-	AdminPassword string `json:"admin_password"`
-
-	Data GameData `json:"data"`
+	AdminPassword string   `json:"admin_password"`
+	Data          GameData `json:"data"`
 }
 
 type ResponseGetGame struct {
@@ -1092,7 +1073,6 @@ type ResponseGetJeopardyGame struct {
 }
 
 type ResponseNewGame struct {
-	GameID string `json:"gameID"`
-
+	GameID   string   `json:"gameID"`
 	GameType GameType `json:"gameType"`
 }
