@@ -1,45 +1,45 @@
 <script lang="ts">
-  import Loading from "$lib/components/Loading.svelte";
+  import Loading from "#lib/components/Loading.svelte";
   import { fade } from "svelte/transition";
 
   export let style: "pulsating" | "spinning" = "pulsating";
 
-  export let loading: boolean;
-  export let loadingMessage = "";
-
-  export let error: unknown | undefined = undefined;
+  export let promise: Promise<any> | undefined;
+  export let message = "";
   export let errorTitle = "Error!";
+
+  $: promise_ = promise !== undefined ? promise : Promise.resolve();
 
   function capitalizeFirst(str: string): string {
     return str.charAt(0).toUpperCase() + str.slice(1);
   }
 
-  $: errorMessage = capitalizeFirst(`${error}`.replace(/^Error: /, ""));
+  function errorMessage(error: any): string {
+    return capitalizeFirst(`${error}`.replace(/^Error: /, ""));
+  }
 </script>
 
-{#if !loading}
+{#await promise_}
+  <div class="loading-container" transition:fade>
+    <Loading {style} />
+    {#if message}
+      <p class="loading-message">{message}</p>
+    {/if}
+  </div>
+{:then}
   <div class="content-container" transition:fade>
     <slot />
   </div>
-{/if}
-
-{#if error}
+{:catch error}
   <div class="error-container">
     <main>
-      <h1>{errorTitle}</h1>
-      <p>{errorMessage}</p>
+      {#if errorTitle}
+        <h1>{errorTitle}</h1>
+      {/if}
+      <p>{errorMessage(error)}</p>
     </main>
   </div>
-{/if}
-
-{#if loading && !error}
-  <div class="loading-container" transition:fade>
-    <Loading {style} />
-    {#if loadingMessage}
-      <p class="loading-message">{loadingMessage}</p>
-    {/if}
-  </div>
-{/if}
+{/await}
 
 <style>
   .loading-container {

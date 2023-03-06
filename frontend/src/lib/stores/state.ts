@@ -1,6 +1,6 @@
-import type * as qg from "$lib/qg";
+import type * as qg from "#lib/qg.js";
 import * as store from "svelte/store";
-import { event } from "$lib/stores/session";
+import { event } from "#lib/stores/session.js";
 
 export type GameState = {
   id: string;
@@ -13,7 +13,8 @@ export type GameState = {
 export const name = store.writable<string>("");
 export const game = store.writable<GameState>();
 
-event.subscribe((ev) =>
+event.subscribe((ev) => {
+  console.log("event", ev);
   game.update((game) => {
     switch (ev.type) {
       case "JoinedGame": {
@@ -45,5 +46,5 @@ event.subscribe((ev) =>
     }
 
     return game;
-  })
-);
+  });
+});

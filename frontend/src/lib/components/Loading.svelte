@@ -1,6 +1,9 @@
+<script lang="ts" context="module">
+  export type LoadingStyle = "pulsating" | "spinning";
+</script>
+
 <script lang="ts">
-  type LoadingStyle = "pulsating" | "spinning";
-  export let style: LoadingStyle;
+  export let style: LoadingStyle = "pulsating";
   export let animationSpeed: "fast" | "slow" = "fast";
 
   const animationDurations = {
