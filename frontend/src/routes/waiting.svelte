@@ -4,17 +4,17 @@
 
   import Loadable from "$lib/components/Loadable.svelte";
 
-  let busy = false;
+  let promise: Promise<any>;
 
-  async function startGame() {
-    busy = true;
-    await $session.send({ type: "BeginGame" });
-    await $session.waitForEvent(["GameStarted"]);
-    busy = false;
+  function startGame() {
+    promise = (async () => {
+      await $session.send({ type: "BeginGame" });
+      await $session.waitForEvent(["GameStarted"]);
+    })();
   }
 </script>
 
-<Loadable loading={busy}>
+<Loadable {promise}>
   <section id="game-info">
     <h2>
       You're in: Jeopardy!

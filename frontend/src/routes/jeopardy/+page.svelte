@@ -15,9 +15,10 @@
     ChoosingQuestion,
     RacingForAnswer,
     Answering,
+    /* RightAnswer, */
+    /* WrongAnswer, */
   }
 
-  let busy = false;
   let state = State.ChoosingQuestion;
   let chooser: string = "<chooser>";
   let category: string = "<category>"; // for testing
@@ -33,6 +34,8 @@
         alreadyPressed = false;
         break;
       case "JeopardyResumeButton":
+        // TODO: at this stage, the user got the wrong answer if alreadyPressed
+        // is true. We should show that screen.
         state = State.RacingForAnswer;
         break;
       case "JeopardyButtonPressed":
@@ -45,22 +48,22 @@
     }
   });
 
+  let promise: Promise<any>;
+
   async function answer() {
-    busy = true;
     alreadyPressed = true;
-    await $session.send({ type: "JeopardyPressButton" });
-    busy = false;
+    promise = $session.send({ type: "JeopardyPressButton" });
   }
 </script>
 
 <header>
   <p>
-    <span class="user">{$name}</span>@<span class="game">jeopardy</span>
+    <span class="user">{$name}</span>@<span class="game">{$game.id}</span>
   </p>
-  <p>qg</p>
+  <p>Jeopardy</p>
 </header>
 
-<Loadable loading={busy}>
+<Loadable {promise}>
   {#if state == State.ChoosingQuestion}
     <section id="choosing-question" transition:slide>
       {#if chooser == $name}

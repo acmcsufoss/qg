@@ -6,6 +6,9 @@
   import { event } from "$lib/stores/session";
   import { toasts } from "$lib/stores/toasts";
 
+  // Force disable SSR for all routes.
+  export const ssr = false;
+
   event.subscribe((ev) => {
     switch (ev.type) {
       case "Error": {
@@ -18,7 +21,7 @@
         break;
       }
       case "GameStarted": {
-        if ($game.jeopardy) navigation.goto(`/jeopardy/${game.id}`);
+        if ($game.jeopardy) navigation.goto(`/jeopardy/${$game.id}`);
       }
     }
   });

@@ -13,9 +13,7 @@
   const gamecodeRegex = `^[a-z0-9]*$`;
   const usernameRegex = `^[a-zA-Z0-9_]{1,20}$`;
 
-  let ready = false;
-  let error: unknown;
-
+  let promise: Promise<any>;
   let gameID = "";
   let isAdmin = false;
   let adminPassword = "";
@@ -26,34 +24,27 @@
       if ($page.route.id != "/") navigation.goto("/");
     });
 
-    error = undefined;
-    try {
-      await $session.open();
-      ready = true;
-    } catch (err) {
-      error = err;
-    }
+    promise = $session.open();
   });
 
-  async function submit() {
-    await $session.send({
-      type: "JoinGame",
-      gameID: gameID,
-      playerName: $name,
-      adminPassword: isAdmin ? adminPassword : null,
-    });
+  function submit() {
+    promise = (async () => {
+      await $session.send({
+        type: "JoinGame",
+        gameID: gameID,
+        playerName: $name,
+        adminPassword: isAdmin ? adminPassword : null,
+      });
 
-    ready = false;
-    await $session.waitForEvent(["JoinedGame", "Error"]);
-    ready = true;
+      await $session.waitForEvent(["JoinedGame", "Error"]);
+    })();
   }
 </script>
 
 <Loadable
-  loading={!ready}
-  loadingMessage="Connecting to the game server..."
+  {promise}
+  message="Connecting to the game server..."
   style="pulsating"
-  {error}
 >
   <main>
     <h1 id="brand"><span>q</span>uiz<span>g</span>ame</h1>
@@ -118,12 +109,9 @@
           transition:slide={{ duration: 200 }}
         >
           <TextualHRule text="or" />
-          <input
-            type="submit"
-            class="secondary"
-            id="create-new"
-            value="Create New"
-          />
+          <a role="button" class="secondary" id="create-new" href="/create">
+            Create New
+          </a>
         </formset>
       {/if}
 
@@ -187,12 +175,17 @@
     position: relative;
   }
 
+  form input[type="submit"],
+  form a[role="button"] {
+    width: 100%;
+  }
+
   form #is-admin-form {
     position: absolute;
     bottom: 0;
   }
 
-  .last-in-form input {
+  .last-in-form * {
     margin: 0;
   }
 
