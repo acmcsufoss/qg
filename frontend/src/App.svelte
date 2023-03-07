@@ -1,27 +1,26 @@
 <script>
-  import * as navigation from "$app/navigation";
-
+  import {
+    addToast,
+    toasts,
+    Urgency as ToastUrgency,
+  } from "#lib/stores/toasts.ts";
   import { fade, fly } from "svelte/transition";
-  import { game } from "$lib/stores/state";
-  import { event } from "$lib/stores/session";
-  import { toasts } from "$lib/stores/toasts";
+  import { event } from "#lib/stores/session.ts";
 
-  // Force disable SSR for all routes.
-  export const ssr = false;
+  import { Router, Route, links } from "svelte-routing";
+  import Index from "./routes/index.svelte";
+  import Create from "./routes/create.svelte";
 
   event.subscribe((ev) => {
     switch (ev.type) {
       case "Error": {
-        // TODO: show a toast or something
-        console.error("error from server:", ev.error.message);
+        console.error("server error:", ev.error.message);
+        addToast({
+          urgency: ToastUrgency.Error,
+          message: ev.error.message,
+          timeout: 10000,
+        });
         break;
-      }
-      case "JoinedGame": {
-        navigation.goto("/waiting");
-        break;
-      }
-      case "GameStarted": {
-        if ($game.jeopardy) navigation.goto(`/jeopardy/${$game.id}`);
       }
     }
   });
@@ -37,10 +36,6 @@
   </div>
 </noscript>
 
-<div class="transition-wrapper" transition:fade>
-  <slot />
-</div>
-
 {#if $toasts}
   <div class="toast-box">
     {#each $toasts as toast}
@@ -50,6 +45,15 @@
     {/each}
   </div>
 {/if}
+
+<div use:links>
+  <Router url="">
+    <div class="transition-wrapper" transition:fade>
+      <Route path="/" component={Index} />
+      <Route path="/create" component={Create} />
+    </div>
+  </Router>
+</div>
 
 <style global>
   @import "normalize.css";

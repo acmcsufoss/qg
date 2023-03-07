@@ -2,10 +2,10 @@
   import * as sveltekit from "@sveltejs/kit";
 
   import { slide } from "svelte/transition";
-  import { game, name } from "$lib/stores/state";
-  import { session, event } from "$lib/stores/session";
+  import { game, name } from "#lib/stores/state.ts";
+  import { session, event } from "#lib/stores/session.ts";
 
-  import Loadable from "$lib/components/Loadable.svelte";
+  import Loadable from "#lib/components/Loadable.svelte";
 
   if (!$game.jeopardy) {
     throw sveltekit.redirect(302, "/");

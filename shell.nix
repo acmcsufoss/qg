@@ -161,5 +161,6 @@ in pkgs.mkShell {
 
 	shellHook = ''
 		PATH="$PWD/node_modules/.bin:$PATH"
+		npm i
 	'';
 }

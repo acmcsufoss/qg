@@ -1,6 +1,6 @@
-import type * as qg from "$lib/qg";
+import type * as qg from "#lib/qg.js";
 import * as store from "svelte/store";
-import { event } from "$lib/stores/session";
+import { event } from "#lib/stores/session.js";
 
 export type GameState = {
   id: string;

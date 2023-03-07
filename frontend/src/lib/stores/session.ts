@@ -1,5 +1,5 @@
 import * as store from "svelte/store";
-import * as qg from "$lib/qg";
+import * as qg from "#lib/qg.js";
 
 export const event = store.writable<qg.Event | { readonly type: "" }>({
   type: "",

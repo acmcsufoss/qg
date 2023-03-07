@@ -1,14 +1,12 @@
 <script lang="ts">
   import * as svelte from "svelte";
-  import * as navigation from "$app/navigation";
 
-  import { page } from "$app/stores";
   import { slide } from "svelte/transition";
-  import { name } from "$lib/stores/state";
-  import { session } from "$lib/stores/session";
+  import { name } from "#lib/stores/state.ts";
+  import { session } from "#lib/stores/session.ts";
 
-  import Loadable from "$lib/components/Loadable.svelte";
-  import TextualHRule from "$lib/components/TextualHRule.svelte";
+  import Loadable from "#lib/components/Loadable.svelte";
+  import TextualHRule from "#lib/components/TextualHRule.svelte";
 
   const gamecodeRegex = `^[a-z0-9]*$`;
   const usernameRegex = `^[a-zA-Z0-9_]{1,20}$`;

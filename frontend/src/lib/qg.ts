@@ -1,8 +1,8 @@
 import * as jtd from "jtd";
-import type * as qg from "./qg-jtd/index";
+import type * as qg from "./qg-jtd/index.js";
 import schema from "./qg-jtd/schema.js";
 
-export * from "./qg-jtd/index";
+export * from "./qg-jtd/index.js";
 export { schema };
 
 // Assert asserts that the given value is a valid type within the qg schema.
