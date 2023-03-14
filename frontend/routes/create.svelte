@@ -1,5 +1,6 @@
 <script lang="ts">
   import * as qg from "#/lib/qg.js";
+  import { slide } from "svelte/transition";
 
   import YAML from "yaml";
   import Brand from "#/lib/components/Brand.svelte";
@@ -12,11 +13,17 @@
   let createdGame: qg.ResponseNewGame | undefined;
 
   let uploadType: "file" | "paste" = "file";
+  let adminPassword = "";
   let files: FileList;
   let paste = {
     data: "",
     format: "",
   };
+
+  $: valid =
+    adminPassword != "" &&
+    ((uploadType == "file" && files && files.length > 0) ||
+      (uploadType == "paste" && paste.data != ""));
 
   function fileFormat(name: string): SupportedFormat {
     switch (name.split(".").pop()) {
@@ -49,15 +56,27 @@
 
   async function submitAsync() {
     let data: qg.GameData;
-    if (files.length > 0) {
-      let file = files[0];
-      let text = await file.text();
-      data = parseGameData(text, fileFormat(file.name));
-    } else {
-      data = parseGameData(paste.data, paste.format as "yaml" | "json");
+    switch (uploadType) {
+      case "file":
+        data = parseGameData(await files[0].text(), fileFormat(files[0].name));
+        break;
+      case "paste":
+        data = parseGameData(paste.data, paste.format as "yaml" | "json");
+        break;
     }
 
-    console.log("will be submitting data", data);
+    const req: qg.RequestNewGame = {
+      admin_password: adminPassword,
+      data,
+    };
+
+    const resp = await fetch("/api/v0/game", {
+      method: "post",
+      body: JSON.stringify(req),
+    });
+
+    const body = await resp.json();
+    createdGame = body as qg.ResponseNewGame;
   }
 
   function submit() {
@@ -74,7 +93,7 @@
   }
 </script>
 
-<main>
+<main class="container">
   <Brand />
 
   {#if createdGame}
@@ -84,8 +103,14 @@
       friends so they can join!
     </p>
   {:else}
-    <hgroup>
-      <h2>Create Game</h2>
+    <h2>Create Game</h2>
+    <form on:submit|preventDefault={submit}>
+      {#await loading catch err}
+        <section class="error">
+          <h3>Error</h3>
+          <p>{err}</p>
+        </section>
+      {/await}
 
       <formset id="type-form" class="radio">
         <input
@@ -104,24 +129,34 @@
         />
         <label for="upload-type-paste">Paste data</label>
       </formset>
-    </hgroup>
 
-    <form on:submit|preventDefault={submit}>
-      {#await loading catch err}
-        <section class="error">
-          <h3>Error</h3>
-          <p>{err}</p>
-        </section>
-      {/await}
+      <formset id="admin-form">
+        <label>
+          Admin Password
+          <input
+            type="text"
+            bind:value={adminPassword}
+            placeholder="correct horse battery staple"
+          />
+        </label>
+      </formset>
 
       {#if uploadType == "file"}
-        <formset id="upload-form">
-          <input type="file" bind:files id="upload" accept=".yaml,.yml,.json" />
+        <formset id="upload-form" transition:slide|local>
+          <label>
+            Choose File
+            <input
+              type="file"
+              bind:files
+              id="upload"
+              accept=".yaml,.yml,.json"
+            />
+          </label>
         </formset>
       {/if}
 
       {#if uploadType == "paste"}
-        <formset id="paste-form">
+        <formset id="paste-form" transition:slide|local>
           <label for="paste-format-form">Paste Format</label>
           <formset id="paste-format-form" class="radio">
             <input
@@ -151,13 +186,7 @@
           />
         </formset>
       {/if}
-      <button
-        type="submit"
-        disabled={!busy && !files && !paste.data}
-        aria-busy={busy}
-      >
-        Create
-      </button>
+      <button type="submit" disabled={!valid} aria-busy={busy}> Create </button>
     </form>
   {/if}
 </main>
@@ -165,17 +194,13 @@
 <style>
   main {
     margin: 0 auto;
-    width: max-content;
-  }
-
-  hgroup > * {
-    margin: calc(var(--typography-spacing-vertical) / 2) 0;
+    padding: 0 1rem;
+    max-width: 600px;
   }
 
   form {
     display: flex;
     flex-direction: column;
-    max-width: 500px;
     width: 100%;
   }
 

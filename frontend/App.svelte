@@ -39,14 +39,21 @@
   <div id="toast-box">
     {#each $toastList as toast}
       <article
-        class="toast toast-{toast.urgency}"
+        id="toast-{toast.id}"
         role="alert"
-        transition:fly={{ y: 100 }}
+        class="toast toast-{toast.urgency}"
+        transition:fly|local={{ y: 100 }}
       >
         <p>
           {toast.message}
         </p>
-        <button on:click={() => toasts.remove(toast)}>✖</button>
+        <button
+          class="close"
+          on:click={() => toasts.remove(toast)}
+          aria-label="Close"
+        >
+          ✖
+        </button>
       </article>
     {/each}
   </div>
@@ -89,18 +96,40 @@
 
   #toast-box {
     position: absolute;
-    width: 100%;
     top: 0;
+    width: 100%;
     z-index: 99;
 
     display: flex;
     flex-direction: column;
     align-items: center;
+
+    margin: calc(var(--typography-spacing-vertical) / 2);
   }
 
   #toast-box > .toast {
-    margin: calc(var(--typography-spacing-vertical) / 4) auto;
+    width: 100%;
     max-width: 500px;
+    margin: calc(var(--typography-spacing-vertical) / 4) auto;
+    padding: 0;
+  }
+
+  .toast {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .toast button.close {
+    flex: 0;
+    margin: 0;
+    height: fit-content;
+    border-color: transparent;
+    background-color: transparent;
+  }
+
+  .toast p {
+    margin: calc(var(--typography-spacing-vertical));
+    white-space: break-spaces;
   }
 
   .toast-info {

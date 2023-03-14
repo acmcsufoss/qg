@@ -112,7 +112,7 @@
 
       <formset id="is-admin-form">
         <input type="checkbox" id="is-admin" bind:checked={isAdmin} />
-        <label for="is-admin">I'm a admin/organizer</label>
+        <label for="is-admin">I'm an admin/organizer</label>
       </formset>
     </form>
 

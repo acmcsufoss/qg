@@ -12,11 +12,11 @@ export type Toast = {
   timeout?: number;
 };
 
-export const list = store.writable<Toast[]>([]);
+export const list = store.writable<(Toast & { id: string })[]>([]);
 
 export function add(toast: Toast) {
   list.update((list) => {
-    list.push(toast);
+    list.push({ ...toast, id: `${Date.now()}-${toast.message}` });
     return list;
   });
 
@@ -30,9 +30,9 @@ export function add(toast: Toast) {
   }
 }
 
-export function remove(toast: Toast) {
+export function remove(toast: { id: string }) {
   list.update((list) => {
-    list = list.filter((t) => t !== toast);
+    list = list.filter((t) => t.id !== toast.id);
     return list;
   });
 }
