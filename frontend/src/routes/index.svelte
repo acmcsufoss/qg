@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { event, session } from "#lib/stores/session";
-  import { game } from "#lib/stores/state";
+  import { event, session } from "#lib/stores/session.js";
+  import { game } from "#lib/stores/state.js";
   import { fade } from "svelte/transition";
 
   import Join from "./index/Join.svelte";
@@ -14,6 +14,7 @@
   }
 
   let screen = Screen.JoinGame;
+  const duration = 150;
 
   $session.addEventListener("close", () => {
     // Kick the user back to the home page if the session closes.
@@ -41,15 +42,15 @@
 </script>
 
 {#if screen == Screen.JoinGame}
-  <div transition:fade>
+  <div transition:fade={{ duration }}>
     <Join />
   </div>
 {:else if screen == Screen.Waiting}
-  <div transition:fade>
+  <div transition:fade={{ duration }}>
     <Waiting />
   </div>
 {:else if screen == Screen.JeopardyGame}
-  <div transition:fade>
+  <div transition:fade={{ duration }}>
     <Jeopardy />
   </div>
 {/if}

@@ -6,14 +6,17 @@ cd "$srcdir"
 
 pids=()
 
+(caddy run --watch --config ./scripts/Caddyfile) &
+pids+=($!)
+
 (go run ./backend --addr localhost:8081) &
 pids+=($!)
 
 (cd frontend && vite dev --port 8082 | cat) &
 pids+=($!)
 
-(caddy run --watch --config ./scripts/Caddyfile) &
-pids+=($!)
+sleep 0.25
+xdg-open http://localhost:8080
 
 trap 'kill -INT ${pids[*]}' EXIT
 wait ${pids[*]}

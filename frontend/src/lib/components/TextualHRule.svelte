@@ -12,6 +12,7 @@
     border: 0;
     text-align: center;
     height: 1.5em;
+    width: 100%;
   }
 
   .textual-h-rule:before {

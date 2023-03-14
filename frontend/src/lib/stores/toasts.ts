@@ -1,29 +1,38 @@
 import * as store from "svelte/store";
 
 export enum Urgency {
-  Info,
-  Warning,
-  Error,
+  Info = "info",
+  Warning = "warning",
+  Error = "error",
 }
 
 export type Toast = {
   urgency: Urgency;
   message: string;
-  timeout: number;
+  timeout?: number;
 };
 
-export const toasts = store.writable<Toast[]>([]);
+export const list = store.writable<Toast[]>([]);
 
-export function addToast(toast: Toast) {
-  toasts.update((toasts) => {
-    toasts.push(toast);
-    return toasts;
+export function add(toast: Toast) {
+  list.update((list) => {
+    list.push(toast);
+    return list;
   });
 
-  setTimeout(() => {
-    toasts.update((toasts) => {
-      toasts.shift();
-      return toasts;
-    });
-  }, toast.timeout);
+  if (toast.timeout) {
+    setTimeout(() => {
+      list.update((list) => {
+        list.shift();
+        return list;
+      });
+    }, toast.timeout);
+  }
+}
+
+export function remove(toast: Toast) {
+  list.update((list) => {
+    list = list.filter((t) => t !== toast);
+    return list;
+  });
 }

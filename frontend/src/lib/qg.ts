@@ -17,13 +17,13 @@ export function Assert(type: string, value: any) {
     maxErrors: 1,
     maxDepth: 200,
   });
-  if (errors) {
+  if (errors.length > 0) {
     const error = errors[0];
     let path = "$";
     if (error.instancePath.length > 0) {
       path += "." + error.instancePath.join(".");
     }
-    throw new Error(`error at ${path}`);
+    throw new Error(`error: ${errors}`);
   }
 }
 

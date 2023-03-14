@@ -1,23 +1,21 @@
 <script>
-  import {
-    addToast,
-    toasts,
-    Urgency as ToastUrgency,
-  } from "#lib/stores/toasts";
+  import * as toasts from "#lib/stores/toasts.js";
 
   import { fade, fly } from "svelte/transition";
-  import { event } from "#lib/stores/session";
+  import { event } from "#lib/stores/session.js";
 
   import { Router, Route, links } from "svelte-routing";
   import Index from "./routes/index.svelte";
   import Create from "./routes/create.svelte";
 
+  const toastList = toasts.list;
+
   event.subscribe((ev) => {
     switch (ev.type) {
       case "Error": {
         console.error("server error:", ev.error.message);
-        addToast({
-          urgency: ToastUrgency.Error,
+        toasts.add({
+          urgency: toasts.Urgency.Error,
           message: ev.error.message,
           timeout: 10000,
         });
@@ -37,19 +35,26 @@
   </div>
 </noscript>
 
-{#if $toasts}
-  <div class="toast-box">
-    {#each $toasts as toast}
-      <p class="toast" transition:fly={{ y: 100 }}>
-        {toast.message}
-      </p>
+{#if $toastList}
+  <div id="toast-box">
+    {#each $toastList as toast}
+      <article
+        class="toast toast-{toast.urgency}"
+        role="alert"
+        transition:fly={{ y: 100 }}
+      >
+        <p>
+          {toast.message}
+        </p>
+        <button on:click={() => toasts.remove(toast)}>✖</button>
+      </article>
     {/each}
   </div>
 {/if}
 
 <div use:links>
-  <Router url="">
-    <div class="transition-wrapper" transition:fade>
+  <Router>
+    <div class="transition-wrapper" transition:fade={{ duration: 150 }}>
       <Route path="/" component={Index} />
       <Route path="/create" component={Create} />
     </div>
@@ -80,6 +85,37 @@
   #noscript-warning p {
     max-width: 400px;
     line-height: var(--line-height);
+  }
+
+  #toast-box {
+    position: absolute;
+    width: 100%;
+    top: 0;
+    z-index: 99;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  #toast-box > .toast {
+    margin: calc(var(--typography-spacing-vertical) / 4) auto;
+    max-width: 500px;
+  }
+
+  .toast-info {
+    --card-background-color: var(--muted-color);
+    color: var(--contrast-inverse);
+  }
+
+  .toast-warning {
+    --card-background-color: var(--mark-background-color);
+    color: var(--contrast-inverse);
+  }
+
+  .toast-error {
+    --card-background-color: var(--del-color);
+    color: var(--contrast-inverse);
   }
 
   :root {

@@ -6,6 +6,7 @@
   import { name } from "#lib/stores/state.js";
   import { session } from "#lib/stores/session.js";
 
+  import Brand from "#lib/components/Brand.svelte";
   import Loadable from "#lib/components/Loadable.svelte";
   import TextualHRule from "#lib/components/TextualHRule.svelte";
 
@@ -41,9 +42,9 @@
   style="pulsating"
 >
   <main>
-    <h1 id="brand"><span>q</span>uiz<span>g</span>ame</h1>
+    <Brand />
 
-    <form on:submit|preventDefault={submit}>
+    <form on:submit|preventDefault={submit} class={isAdmin ? "isAdmin" : ""}>
       <formset id="gamecode-form">
         <label for="gamecode">
           Enter your
@@ -146,8 +147,11 @@
     flex-direction: column;
     align-items: stretch;
     height: 100vh;
-    min-height: 600px;
     position: relative;
+  }
+
+  main :global(#brand) {
+    position: absolute;
   }
 
   footer {
@@ -163,10 +167,14 @@
     flex-direction: column;
     justify-content: center;
     align-items: stretch;
-    max-width: 600px;
     margin: 0 auto;
     flex: 1;
     position: relative;
+  }
+
+  form.isAdmin {
+    /* Hack: the form with isAdmin is too long. */
+    min-height: 650px;
   }
 
   form input[type="submit"],
@@ -181,17 +189,6 @@
 
   .last-in-form * {
     margin: 0;
-  }
-
-  #brand {
-    align-self: center;
-    text-align: center;
-    font-size: 3rem;
-    font-weight: lighter;
-  }
-
-  #brand span {
-    font-weight: bold;
   }
 
   #is-admin-form {

@@ -8,6 +8,7 @@
     "sourceMap": true,
     "strict": true,
     "module": "esnext",
+    "moduleResolution": "nodenext",
     "esModuleInterop": true,
     "paths": {
       "#src/*": [
