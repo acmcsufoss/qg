@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { game } from "#lib/stores/state";
-  import { session } from "#lib/stores/session";
+  import { game } from "#/lib/stores/state";
+  import { session } from "#/lib/stores/session";
 
-  import Loadable from "#lib/components/Loadable.svelte";
+  import Loadable from "#/lib/components/Loadable.svelte";
 
   let promise: Promise<any>;
 

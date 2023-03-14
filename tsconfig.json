@@ -8,14 +8,15 @@
     "sourceMap": true,
     "strict": true,
     "module": "esnext",
+    "target": "esnext",
     "moduleResolution": "nodenext",
     "esModuleInterop": true,
+    "types": [
+      "vite/client"
+    ],
     "paths": {
-      "#src/*": [
-        "./src/*"
-      ],
-      "#lib/*": [
-        "./src/lib/*"
+      "#/*": [
+        "./frontend/*"
       ]
     }
   }

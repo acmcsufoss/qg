@@ -3,12 +3,12 @@
   import * as store from "svelte/store";
 
   import { slide } from "svelte/transition";
-  import { name } from "#lib/stores/state.js";
-  import { session } from "#lib/stores/session.js";
+  import { name } from "#/lib/stores/state.js";
+  import { session } from "#/lib/stores/session.js";
 
-  import Brand from "#lib/components/Brand.svelte";
-  import Loadable from "#lib/components/Loadable.svelte";
-  import TextualHRule from "#lib/components/TextualHRule.svelte";
+  import Brand from "#/lib/components/Brand.svelte";
+  import Loadable from "#/lib/components/Loadable.svelte";
+  import TextualHRule from "#/lib/components/TextualHRule.svelte";
 
   const gamecodeRegex = `^[a-z0-9]*$`;
   const usernameRegex = `^[a-zA-Z0-9_]{1,20}$`;

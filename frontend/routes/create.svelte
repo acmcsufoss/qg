@@ -1,8 +1,8 @@
 <script lang="ts">
-  import * as qg from "#lib/qg.js";
+  import * as qg from "#/lib/qg.js";
 
   import YAML from "yaml";
-  import Brand from "#lib/components/Brand.svelte";
+  import Brand from "#/lib/components/Brand.svelte";
 
   type SupportedFormat = "yaml" | "json";
 

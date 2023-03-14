@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { event, session } from "#lib/stores/session.js";
-  import { game } from "#lib/stores/state.js";
+  import { event, session } from "#/lib/stores/session.js";
+  import { game } from "#/lib/stores/state.js";
   import { fade } from "svelte/transition";
 
   import Join from "./index/Join.svelte";

@@ -5,8 +5,8 @@
   "description": "",
   "license": "ISC",
   "scripts": {
-    "dev": "cd frontend && vite",
-    "build": "cd frontend && vite build",
+    "dev": "vite",
+    "build": "vite build",
     "generate": "go generate"
   },
   "devDependencies": {
@@ -28,7 +28,6 @@
     "yaml": "^2.2.1"
   },
   "imports": {
-    "#src/*": "./frontend/src/*",
-    "#lib/*": "./frontend/src/lib/*"
+    "#/*": "./frontend/*"
   }
 }

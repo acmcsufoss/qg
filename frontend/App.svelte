@@ -1,8 +1,8 @@
-<script>
-  import * as toasts from "#lib/stores/toasts.js";
+<script lang="ts">
+  import * as toasts from "#/lib/stores/toasts.js";
 
   import { fade, fly } from "svelte/transition";
-  import { event } from "#lib/stores/session.js";
+  import { event } from "#/lib/stores/session.js";
 
   import { Router, Route, links } from "svelte-routing";
   import Index from "./routes/index.svelte";

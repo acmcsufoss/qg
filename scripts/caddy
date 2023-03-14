@@ -12,7 +12,7 @@ pids+=($!)
 (go run ./backend --addr localhost:8081) &
 pids+=($!)
 
-(cd frontend && vite dev --port 8082 | cat) &
+(vite dev --port 8082 | cat) &
 pids+=($!)
 
 sleep 0.25

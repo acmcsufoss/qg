@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Loading from "#lib/components/Loading.svelte";
+  import Loading from "#/lib/components/Loading.svelte";
   import { fade } from "svelte/transition";
 
   export let style: "pulsating" | "spinning" = "pulsating";
