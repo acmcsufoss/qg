@@ -2,6 +2,7 @@ package games
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/pkg/errors"
@@ -55,7 +56,7 @@ func (g *Manager) CreateGame(ctx context.Context, data qg.IGameData) (qg.GameID,
 	gameCreator, ok := g.gameCreators[gameType]
 	g.gamesMut.RUnlock()
 	if !ok {
-		return "", errors.New("unsupported game")
+		return "", fmt.Errorf("unknown game type %q", gameType)
 	}
 
 	id, err := g.store.CreateGame(ctx, data)
@@ -99,7 +100,7 @@ func (h *gameHandler) HandleCommand(ctx context.Context, cmd qg.ICommand) (err e
 		h.gm.gamesMut.RUnlock()
 
 		if !ok {
-			return errors.New("unsupported game")
+			return fmt.Errorf("unknown game with ID %q", data.GameID)
 		}
 
 		h.gg, err = game.NewCommandHandler(ctx, h.evs)
