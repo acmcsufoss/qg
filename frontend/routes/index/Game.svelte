@@ -30,20 +30,65 @@
 </script>
 
 {#if $game}
-  <header>
-    <p>
-      <span class="user">{$name}</span>@<span class="game">{$game.id}</span>
-    </p>
-    <p>Jeopardy</p>
-  </header>
+  <main>
+    <header>
+      <div class="container">
+        <p class="id">
+          <span class="user">{$name}</span>@<code class="game">{$game.id}</code>
+        </p>
+        <p class="game">Jeopardy</p>
+      </div>
+    </header>
 
-  {#if screen == Screen.Waiting}
-    <main>
+    {#if screen == Screen.Waiting}
       <Waiting />
-    </main>
-  {:else if screen == Screen.JeopardyGame}
-    <main>
+    {:else if screen == Screen.JeopardyGame}
       <Jeopardy />
-    </main>
-  {/if}
+    {/if}
+  </main>
 {/if}
+
+<style>
+  main {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+
+  main > :global(:not(header)) {
+    flex: 1;
+  }
+
+  header {
+    background-color: black;
+    padding: 0.25rem 0;
+  }
+
+  header div.container {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  @media (max-width: 300px) {
+    header div.container {
+      flex-direction: column;
+    }
+  }
+
+  header p {
+    color: var(--muted-color);
+    margin: 0;
+    font-size: 0.9rem;
+  }
+
+  header .id .user,
+  header .id .game {
+    color: white;
+  }
+
+  code.game {
+    padding: 0;
+    font-size: inherit;
+    background-color: transparent;
+  }
+</style>

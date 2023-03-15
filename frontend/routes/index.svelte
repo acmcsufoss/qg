@@ -2,7 +2,7 @@
   import * as svelte from "svelte";
   import * as toasts from "#/lib/stores/toasts.js";
 
-  import { loading, game } from "#/lib/stores/state.js";
+  import { loading, game, name } from "#/lib/stores/state.js";
   import { event } from "#/lib/stores/session.js";
   import { fade } from "svelte/transition";
 
@@ -18,11 +18,47 @@
     return capitalizeFirst(`${error}`.replace(/^Error: /, ""));
   }
 
-  /*
+  $name = "Diamond";
   $game = {
     id: "abcd",
-    isAdmin: true,
+    isAdmin: false,
     players: [
+      { playerName: "hi", score: 100 },
+      { playerName: "bye", score: 200 },
+      { playerName: "hello", score: 300 },
+      { playerName: "goodbye", score: 400 },
+      { playerName: "hi", score: 100 },
+      { playerName: "bye", score: 200 },
+      { playerName: "hello", score: 300 },
+      { playerName: "goodbye", score: 400 },
+      { playerName: "hi", score: 100 },
+      { playerName: "bye", score: 200 },
+      { playerName: "hello", score: 300 },
+      { playerName: "goodbye", score: 400 },
+      { playerName: "hi", score: 100 },
+      { playerName: "bye", score: 200 },
+      { playerName: "hello", score: 300 },
+      { playerName: "goodbye aaaaaaaaaaaaaaaaaaaaaaaaaaa", score: 400 },
+      { playerName: "hi", score: 100 },
+      { playerName: "bye", score: 200 },
+      { playerName: "hello", score: 300 },
+      { playerName: "goodbye", score: 400 },
+      { playerName: "hi", score: 100 },
+      { playerName: "bye", score: 200 },
+      { playerName: "hello", score: 300 },
+      { playerName: "goodbye", score: 400 },
+      { playerName: "hi", score: 100 },
+      { playerName: "bye", score: 200 },
+      { playerName: "hello", score: 300 },
+      { playerName: "goodbye", score: 400 },
+      { playerName: "hi", score: 100 },
+      { playerName: "bye", score: 200 },
+      { playerName: "hello", score: 300 },
+      { playerName: "goodbye", score: 400 },
+      { playerName: "hi", score: 100 },
+      { playerName: "bye", score: 200 },
+      { playerName: "hello", score: 300 },
+      { playerName: "goodbye", score: 400 },
       { playerName: "hi", score: 100 },
       { playerName: "bye", score: 200 },
       { playerName: "hello", score: 300 },
@@ -34,7 +70,6 @@
       scoreMultiplier: 100,
     },
   };
-  */
 
   svelte.onMount(() => {
     event.subscribe((ev) => {
@@ -105,6 +140,10 @@
     align-items: center;
     margin: auto;
     background-image: var(--del-background-gradient);
+
+    position: absolute;
+    top: 0;
+    z-index: 2;
   }
 
   .error-container main {

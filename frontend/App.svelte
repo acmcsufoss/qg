@@ -93,6 +93,9 @@
   }
 
   .toast button.close {
+    --primary: var(--del-color);
+    --primary-focus: var(--del-color-focus);
+
     flex: 0;
     margin: 0;
     height: fit-content;
@@ -122,6 +125,8 @@
 
   :root {
     --line-height: 1.35;
+    --del-color: rgb(252, 85, 122);
+    --del-color-focus: rgba(252, 85, 122, 0.55);
   }
 
   /* https://colordesigner.io/ */
