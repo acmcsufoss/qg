@@ -37,12 +37,6 @@
   */
 
   svelte.onMount(() => {
-    $loading = {
-      promise: new Promise((resolve) => {
-        setTimeout(resolve, 1000);
-      }),
-      message: "Doing jackshit...",
-    };
     event.subscribe((ev) => {
       if (ev && ev.type == "Error") {
         console.error("server error:", ev.error);
