@@ -77,70 +77,77 @@ export class Session extends sessionEventTarget {
     return new Session(`${protocol}://${host}/api/${APIVersion}/ws`);
   }
 
-  ws: WebSocket;
-
-  private openPromise: Promise<void>;
+  private ws: WebSocket | null;
+  private url: string;
+  private openPromise: Promise<void> = Promise.resolve();
 
   constructor(url: string) {
     super();
     console.log("connecting to", url);
 
-    this.ws = new WebSocket(url);
-    this.ws.addEventListener("open", this.onOpen.bind(this));
-    this.ws.addEventListener("message", this.onMessage.bind(this));
-
-    this.openPromise = new Promise((resolve, reject) => {
-      this.ws.addEventListener("open", () => {
-        resolve();
-      });
-      this.ws.addEventListener("close", (ev) =>
-        reject(new Error(`closed (code ${ev.code}): ${ev.reason}`))
-      );
-      this.ws.addEventListener("error", (ev) => {
-        reject(new Error(`websocket connection error: server unreachable`));
-      });
-    });
+    this.ws = null;
+    this.url = url;
   }
 
   async open() {
+    this.init();
     await this.openPromise;
   }
 
   async close(graceful: boolean = true) {
-    this.ws.close(graceful ? 1000 : 1001);
+    if (this.ws) this.ws.close(graceful ? 1000 : 1001);
   }
 
   async send(event: qg.Command) {
+    if (!this.ws) throw new Error("websocket is closed");
     this.ws.send(JSON.stringify(event));
   }
 
-  // waitForEvent waits for any event of the given types.
-  async waitForEvent<
-    // Ungodly TypeScript magic. This type is the union of all Event type
-    // values.
-    T1 extends qg.Event["type"],
-    // This one uses the above type value to get the actual qg.Event type.
-    T2 extends Extract<qg.Event, { type: T1 }>
-  >(types?: T1[], timeout = 0): Promise<T2> {
+  async waitForEvent(): Promise<qg.Event> {
     return new Promise((resolve, reject) => {
-      let timeoutID: ReturnType<typeof setTimeout> | undefined;
-      if (timeout > 0) {
-        timeoutID = setTimeout(() => {
-          this.removeEventListener("event", f);
-          reject(new Error("timeout waiting for event"));
-        }, timeout);
-      }
+      const onEvent = (ev: CustomEvent<qg.Event> | null) => {
+        this.removeEventListener("event", onEvent);
+        this.removeEventListener("close", onClose);
 
-      const f = (ev: CustomEvent<qg.Event>) => {
-        if (!types || types.includes(ev.detail.type as T1)) {
-          if (timeoutID) {
-            clearInterval(timeoutID);
-          }
-
-          this.removeEventListener("event", f);
-          resolve(ev.detail as T2);
+        if (!ev) {
+          reject(new Error("session closed"));
+          return;
         }
+
+        resolve(ev.detail);
       };
+
+      const onClose = () => onEvent(null);
+
+      this.addEventListener("event", onEvent);
+      this.addEventListener("close", onClose);
+    });
+  }
+
+  private init() {
+    if (this.ws) return;
+
+    console.log("connecting to websocket...");
+
+    const ws = new WebSocket(this.url);
+    this.ws = ws;
+    this.ws.addEventListener("open", this.onOpen.bind(this));
+    this.ws.addEventListener("close", this.onClose.bind(this));
+    this.ws.addEventListener("message", this.onMessage.bind(this));
+
+    this.openPromise = new Promise((resolve, reject) => {
+      if (!ws) {
+        throw "ws should not be null";
+      }
+      ws.addEventListener("open", () => {
+        resolve();
+      });
+      ws.addEventListener("close", (ev) =>
+        reject(new Error(`closed (code ${ev.code}): ${ev.reason}`))
+      );
+      ws.addEventListener("error", (ev) => {
+        reject(new Error(`websocket connection error: server unreachable`));
+      });
     });
   }
 
@@ -150,6 +157,8 @@ export class Session extends sessionEventTarget {
 
   private async onClose() {
     this.dispatchEvent(new CustomEvent("close"));
+    this.ws = null;
+    // this.init(); // immediately reconnect
   }
 
   private async onMessage(event: MessageEvent) {

@@ -2,38 +2,13 @@
   import * as toasts from "#/lib/stores/toasts.js";
 
   import { fade, fly } from "svelte/transition";
-  import { event } from "#/lib/stores/session.js";
-
   import { Router, Route, links } from "svelte-routing";
+
   import Index from "./routes/index.svelte";
   import Create from "./routes/create.svelte";
 
   const toastList = toasts.list;
-
-  event.subscribe((ev) => {
-    switch (ev.type) {
-      case "Error": {
-        console.error("server error:", ev.error.message);
-        toasts.add({
-          urgency: toasts.Urgency.Error,
-          message: ev.error.message,
-          timeout: 10000,
-        });
-        break;
-      }
-    }
-  });
 </script>
-
-<noscript id="noscript-warning">
-  <div>
-    <h2>Hey!</h2>
-    <p>
-      It appears you have JavaScript disabled! Unfortunately, this site requires
-      JavaScript to function properly. Please enable JavaScript to continue!
-    </p>
-  </div>
-</noscript>
 
 {#if $toastList}
   <div id="toast-box">
@@ -61,10 +36,8 @@
 
 <div use:links>
   <Router>
-    <div class="transition-wrapper" transition:fade={{ duration: 150 }}>
-      <Route path="/" component={Index} />
-      <Route path="/create" component={Create} />
-    </div>
+    <Route path="/" component={Index} />
+    <Route path="/create" component={Create} />
   </Router>
 </div>
 

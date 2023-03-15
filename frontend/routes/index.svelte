@@ -1,56 +1,129 @@
 <script lang="ts">
-  import { event, session } from "#/lib/stores/session.js";
-  import { game } from "#/lib/stores/state.js";
+  import * as svelte from "svelte";
+  import * as toasts from "#/lib/stores/toasts.js";
+
+  import { loading, game } from "#/lib/stores/state.js";
+  import { event } from "#/lib/stores/session.js";
   import { fade } from "svelte/transition";
 
   import Join from "./index/Join.svelte";
-  import Waiting from "./index/Waiting.svelte";
-  import Jeopardy from "./index/Jeopardy.svelte";
+  import Game from "./index/Game.svelte";
+  import Loading from "#/lib/components/Loading.svelte";
 
-  enum Screen {
-    JoinGame,
-    Waiting,
-    JeopardyGame,
+  function capitalizeFirst(str: string): string {
+    return str.charAt(0).toUpperCase() + str.slice(1);
   }
 
-  let screen = Screen.JoinGame;
-  const duration = 150;
+  function errorMessage(error: any): string {
+    return capitalizeFirst(`${error}`.replace(/^Error: /, ""));
+  }
 
-  $session.addEventListener("close", () => {
-    // Kick the user back to the home page if the session closes.
-    screen = Screen.JoinGame;
-  });
+  /*
+  $game = {
+    id: "abcd",
+    isAdmin: true,
+    players: [
+      { playerName: "hi", score: 100 },
+      { playerName: "bye", score: 200 },
+      { playerName: "hello", score: 300 },
+      { playerName: "goodbye", score: 400 },
+    ],
+    jeopardy: {
+      categories: ["a", "b", "c", "d"],
+      numQuestions: 4,
+      scoreMultiplier: 100,
+    },
+  };
+  */
 
-  event.subscribe((ev) => {
-    switch (ev.type) {
-      case "Error": {
-        // TODO: show a toast or something
-        console.error("error from server:", ev.error.message);
-        break;
+  svelte.onMount(() => {
+    $loading = {
+      promise: new Promise((resolve) => {
+        setTimeout(resolve, 1000);
+      }),
+      message: "Doing jackshit...",
+    };
+    event.subscribe((ev) => {
+      if (ev && ev.type == "Error") {
+        console.error("server error:", ev.error);
+        toasts.add({
+          urgency: toasts.Urgency.Error,
+          message: `Error: ${ev.error.message}`,
+          timeout: 10000,
+        });
       }
-      case "JoinedGame": {
-        screen = Screen.Waiting;
-        break;
-      }
-      case "GameStarted": {
-        if ($game.jeopardy) {
-          screen = Screen.JeopardyGame;
-        }
-      }
-    }
+    });
   });
 </script>
 
-{#if screen == Screen.JoinGame}
-  <div transition:fade={{ duration }}>
-    <Join />
+<div class="loadable">
+  {#await $loading.promise}
+    <div class="loading-container" transition:fade={{ duration: 250 }}>
+      <Loading />
+      {#if $loading.message}
+        <p class="loading-message">{$loading.message}</p>
+      {/if}
+    </div>
+  {:catch error}
+    <div class="error-container">
+      <main>
+        <h1>Error!</h1>
+        <p>{errorMessage(error)}</p>
+      </main>
+    </div>
+  {/await}
+
+  <div class="content-container">
+    {#if $game}
+      <Game />
+    {:else}
+      <Join />
+    {/if}
   </div>
-{:else if screen == Screen.Waiting}
-  <div transition:fade={{ duration }}>
-    <Waiting />
-  </div>
-{:else if screen == Screen.JeopardyGame}
-  <div transition:fade={{ duration }}>
-    <Jeopardy />
-  </div>
-{/if}
+</div>
+
+<style>
+  .loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--typography-spacing-vertical);
+
+    width: 100vw;
+    height: 100vh;
+
+    position: absolute;
+    top: 0;
+    z-index: 2;
+
+    background-color: var(--background-color);
+  }
+
+  .content-container {
+    z-index: 1;
+  }
+
+  .error-container {
+    height: 100vh;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin: auto;
+    background-image: var(--del-background-gradient);
+  }
+
+  .error-container main {
+    --typography-spacing-vertical: 1em;
+    margin: auto;
+    border: 2px solid var(--del-color);
+    border-left: 0;
+    border-right: 0;
+    padding: 0 1em;
+    max-width: 600px;
+  }
+
+  .error-container main > * {
+    margin: 1rem 0;
+  }
+</style>

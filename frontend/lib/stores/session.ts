@@ -1,19 +1,27 @@
 import * as store from "svelte/store";
 import * as qg from "#/lib/qg.js";
 
-export const event = store.writable<qg.Event | { readonly type: "" }>({
-  type: "",
-});
+export const event = store.writable<qg.Event | null>();
 
-export const session = store.readable<qg.Session>(undefined, (set) => {
-  const f = (ev: CustomEvent<qg.Event>) => event.set(ev.detail);
-  const s = qg.Session.newLocal();
-  s.addEventListener("event", f);
+let internalSession: qg.Session | undefined;
 
-  set(s);
+export const session = internalSession;
 
-  return () => {
-    s.removeEventListener("event", f);
-    s.close();
-  };
-});
+export async function open() {
+  if (!internalSession) {
+    internalSession = qg.Session.newLocal();
+    internalSession.addEventListener("event", (ev) => event.set(ev.detail));
+    // internalSession.addEventListener("close", () => connect());
+    return internalSession.open();
+  }
+}
+
+export async function send(cmd: qg.Command) {
+  await open();
+  return internalSession!.send(cmd);
+}
+
+export async function waitForEvent(): Promise<qg.Event> {
+  await open();
+  return internalSession!.waitForEvent();
+}
