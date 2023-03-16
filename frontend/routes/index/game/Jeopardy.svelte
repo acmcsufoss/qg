@@ -1,7 +1,8 @@
 <script lang="ts">
   import { slide } from "svelte/transition";
-  import { session, event } from "#/lib/stores/session.js";
+  import { event } from "#/lib/stores/session.js";
   import { loading, game, name } from "#/lib/stores/state.js";
+  import * as session from "#/lib/stores/session.js";
 
   enum State {
     ChoosingQuestion,
@@ -18,6 +19,8 @@
   let alreadyPressed = false;
 
   event.subscribe((ev) => {
+    if (!ev || !$game) return;
+
     switch (ev.type) {
       case "JeopardyBeginQuestion":
         state = State.RacingForAnswer;
@@ -44,75 +47,93 @@
     alreadyPressed = true;
     $loading = {
       promise: (async () => {
-        await $session.send({ type: "JeopardyPressButton" });
+        await session.send({ type: "JeopardyPressButton" });
         alreadyPressed = false;
       })(),
-      message: "",
-      style: "pulsating",
     };
   }
 </script>
 
-{#if state == State.ChoosingQuestion}
-  <section id="choosing-question" transition:slide>
-    {#if chooser == $name}
-      <h3>
-        It's your turn
-        <br />
-        <small>Choose a question!</small>
-      </h3>
-      <!-- TODO: questions table -->
-      <!-- TODO: mobile layout, probably a 2-column table and a drop-down -->
-      <table>
-        <thead>
-          <tr>
-            {#each $game.jeopardy?.categories ?? [] as category}
-              <th>{category}</th>
-            {/each}
-          </tr>
-        </thead>
-        <tbody>
-          {#each { length: $game.jeopardy?.numQuestions ?? 0 } as _, i}
+{#if $game}
+  {#if state == State.ChoosingQuestion}
+    <section id="choosing-question" class="container" transition:slide>
+      {#if chooser == $name}
+        <h3>
+          It's your turn
+          <br />
+          <small>Choose a question!</small>
+        </h3>
+        <!-- TODO: questions table -->
+        <!-- TODO: mobile layout, probably a 2-column table and a drop-down -->
+        <table>
+          <thead>
             <tr>
-              {#each $game.jeopardy?.categories ?? [] as _}
-                <td>{i * ($game.jeopardy?.scoreMultiplier ?? 0)}</td>
+              {#each $game.jeopardy?.categories ?? [] as category}
+                <th>{category}</th>
               {/each}
             </tr>
-          {/each}
-        </tbody>
-      </table>
-    {:else}
-      <h3>
-        Waiting for <span class="user">{chooser}</span> to choose a question...
-      </h3>
-    {/if}
-  </section>
-{/if}
-
-{#if state == State.RacingForAnswer}
-  <section id="racing-for-answer" transition:slide>
-    <h3>Question:</h3>
-    <h4 class="category">{category}</h4>
-    <p class="question">{question}</p>
-    <button on:click={() => answer()} disabled={alreadyPressed}>
-      {#if alreadyPressed}
-        You already answered :(
+          </thead>
+          <tbody>
+            {#each { length: $game.jeopardy?.numQuestions ?? 0 } as _, i}
+              <tr>
+                {#each $game.jeopardy?.categories ?? [] as _}
+                  <td>{i * ($game.jeopardy?.scoreMultiplier ?? 0)}</td>
+                {/each}
+              </tr>
+            {/each}
+          </tbody>
+        </table>
       {:else}
-        Answer!
+        <h3>
+          Waiting for <span class="user">{chooser}</span> to choose a question...
+        </h3>
       {/if}
-    </button>
-  </section>
+    </section>
+  {/if}
+
+  {#if state == State.RacingForAnswer}
+    <section id="racing-for-answer" class="container" transition:slide>
+      <h3>Question:</h3>
+      <h4 class="category">{category}</h4>
+      <p class="question">{question}</p>
+      <button on:click={() => answer()} disabled={alreadyPressed}>
+        {#if alreadyPressed}
+          You already answered :(
+        {:else}
+          Answer!
+        {/if}
+      </button>
+    </section>
+  {/if}
+
+  {#if state == State.Answering}
+    <!-- Intentionally use no transition. -->
+    <section id="answering" class="container">
+      {#if alreadyPressed}
+        <h3>You're answering!</h3>
+      {:else}
+        <h3>Someone's answering...</h3>
+      {/if}
+      <h4 class="category">{category}</h4>
+      <p class="question">{question}</p>
+    </section>
+  {/if}
 {/if}
 
-{#if state == State.Answering}
-  <!-- Intentionally use no transition. -->
-  <section id="answering">
-    {#if alreadyPressed}
-      <h3>You're answering!</h3>
-    {:else}
-      <h3>Someone's answering...</h3>
-    {/if}
-    <h4 class="category">{category}</h4>
-    <p class="question">{question}</p>
-  </section>
-{/if}
+<style>
+  #choosing-question table {
+    table-layout: fixed;
+    gap: 0.75rem;
+  }
+
+  #choosing-question table th,
+  #choosing-question table td {
+    padding: 0.75rem 0;
+    font-size: 1.15rem;
+    text-align: center;
+  }
+
+  #choosing-question table th {
+    font-weight: bold;
+  }
+</style>
