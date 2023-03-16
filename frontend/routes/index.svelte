@@ -18,59 +18,6 @@
     return capitalizeFirst(`${error}`.replace(/^Error: /, ""));
   }
 
-  $name = "Diamond";
-  $game = {
-    id: "abcd",
-    isAdmin: false,
-    players: [
-      { playerName: "hi", score: 100 },
-      { playerName: "bye", score: 200 },
-      { playerName: "hello", score: 300 },
-      { playerName: "goodbye", score: 400 },
-      { playerName: "hi", score: 100 },
-      { playerName: "bye", score: 200 },
-      { playerName: "hello", score: 300 },
-      { playerName: "goodbye", score: 400 },
-      { playerName: "hi", score: 100 },
-      { playerName: "bye", score: 200 },
-      { playerName: "hello", score: 300 },
-      { playerName: "goodbye", score: 400 },
-      { playerName: "hi", score: 100 },
-      { playerName: "bye", score: 200 },
-      { playerName: "hello", score: 300 },
-      { playerName: "goodbye aaaaaaaaaaaaaaaaaaaaaaaaaaa", score: 400 },
-      { playerName: "hi", score: 100 },
-      { playerName: "bye", score: 200 },
-      { playerName: "hello", score: 300 },
-      { playerName: "goodbye", score: 400 },
-      { playerName: "hi", score: 100 },
-      { playerName: "bye", score: 200 },
-      { playerName: "hello", score: 300 },
-      { playerName: "goodbye", score: 400 },
-      { playerName: "hi", score: 100 },
-      { playerName: "bye", score: 200 },
-      { playerName: "hello", score: 300 },
-      { playerName: "goodbye", score: 400 },
-      { playerName: "hi", score: 100 },
-      { playerName: "bye", score: 200 },
-      { playerName: "hello", score: 300 },
-      { playerName: "goodbye", score: 400 },
-      { playerName: "hi", score: 100 },
-      { playerName: "bye", score: 200 },
-      { playerName: "hello", score: 300 },
-      { playerName: "goodbye", score: 400 },
-      { playerName: "hi", score: 100 },
-      { playerName: "bye", score: 200 },
-      { playerName: "hello", score: 300 },
-      { playerName: "goodbye", score: 400 },
-    ],
-    jeopardy: {
-      categories: ["a", "b", "c", "d"],
-      numQuestions: 4,
-      scoreMultiplier: 100,
-    },
-  };
-
   svelte.onMount(() => {
     event.subscribe((ev) => {
       if (ev && ev.type == "Error") {
