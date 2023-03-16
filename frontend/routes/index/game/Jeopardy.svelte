@@ -52,37 +52,51 @@
       })(),
     };
   }
+
+  function chooseQuestion(category: number, question: number) {
+    $loading = {
+      promise: (async () => {
+        await session.send({
+          type: "JeopardyChooseQuestion",
+          category,
+          question,
+        });
+      })(),
+    };
+  }
 </script>
 
-{#if $game}
+{#if $game && $game.jeopardy}
   {#if state == State.ChoosingQuestion}
     <section id="choosing-question" class="container" transition:slide>
       {#if chooser == $name}
         <h3>
-          It's your turn
+          It's your turn,
           <br />
           <small>Choose a question!</small>
         </h3>
         <!-- TODO: questions table -->
         <!-- TODO: mobile layout, probably a 2-column table and a drop-down -->
-        <table>
-          <thead>
-            <tr>
-              {#each $game.jeopardy?.categories ?? [] as category}
-                <th>{category}</th>
-              {/each}
-            </tr>
-          </thead>
-          <tbody>
-            {#each { length: $game.jeopardy?.numQuestions ?? 0 } as _, i}
-              <tr>
-                {#each $game.jeopardy?.categories ?? [] as _}
-                  <td>{i * ($game.jeopardy?.scoreMultiplier ?? 0)}</td>
+        <ul>
+          {#each $game.jeopardy?.categories ?? [] as category, c}
+            <li>
+              <p class="category">{category}</p>
+              <ol>
+                {#each { length: $game.jeopardy.numQuestions ?? 0 } as _, q}
+                  <li>
+                    <a
+                      href="#answer"
+                      role="button"
+                      on:click={() => chooseQuestion(c, q)}
+                    >
+                      {(q + 1) * ($game.jeopardy?.scoreMultiplier ?? 100)}
+                    </a>
+                  </li>
                 {/each}
-              </tr>
-            {/each}
-          </tbody>
-        </table>
+              </ol>
+            </li>
+          {/each}
+        </ul>
       {:else}
         <h3>
           Waiting for <span class="user">{chooser}</span> to choose a question...
@@ -121,19 +135,66 @@
 {/if}
 
 <style>
-  #choosing-question table {
-    table-layout: fixed;
-    gap: 0.75rem;
+  #choosing-question ul,
+  #choosing-question ol,
+  #choosing-question li {
+    padding: 0;
+    margin: 0;
   }
 
-  #choosing-question table th,
-  #choosing-question table td {
-    padding: 0.75rem 0;
-    font-size: 1.15rem;
-    text-align: center;
+  #choosing-question li {
+    list-style: none;
   }
 
-  #choosing-question table th {
+  #choosing-question ul > li {
+    overflow: hidden;
+    border-radius: calc(2 * var(--border-radius));
+    margin-bottom: var(--typography-spacing-vertical);
+    background-color: var(--form-element-background-color);
+  }
+
+  #choosing-question ul ol {
+    display: flex;
+    justify-content: space-around;
+  }
+
+  #choosing-question p.category {
+    padding: 0 1rem;
+    font-size: 2rem;
+  }
+
+  #choosing-question ul ol li {
+    flex: 1;
+  }
+
+  #choosing-question ul ol li:not(:last-child) {
+    border-right: 1px solid var(--form-element-background-color);
+  }
+
+  #choosing-question ul ol li a {
+    width: 100%;
+    padding-left: 0;
+    padding-right: 0;
+    border-radius: 0;
+  }
+
+  #racing-for-answer {
+    display: flex;
+    flex-direction: column;
+  }
+
+  #racing-for-answer .category,
+  #racing-for-answer .question {
+    font-size: 2rem;
+    margin-top: 0;
+    margin-bottom: 2rem;
+  }
+
+  #racing-for-answer button {
+    height: 100%;
+    font-size: 2.5rem;
     font-weight: bold;
+    margin-top: 1rem;
+    border-radius: calc(2 * var(--border-radius));
   }
 </style>
